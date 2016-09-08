@@ -1,0 +1,11 @@
+{
+	"ImportPath": "github.com/jcsirot/goto770",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v74",
+	"Deps": [
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		}
+	]
+}
