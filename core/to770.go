@@ -5,14 +5,14 @@ import (
 )
 
 var (
-	cpu Cpu
-	ram Ram
+	Cpu CPU
+	Ram Memory
 )
 
 func Start() {
-	ram = NewRam()
-	cpu.Initialize()
+	Ram = NewRam()
+	Cpu.Initialize(Ram)
 
-	cpu.neg(10)
-	fmt.Println("cpu = %s", cpu)
+	Cpu.neg(10)
+	fmt.Println("cpu = %s", Cpu)
 }

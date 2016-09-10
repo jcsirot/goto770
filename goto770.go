@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/golang/glog"
 	"os"
 	"runtime"
+	"sync"
+
+	"github.com/golang/glog"
 
 	"github.com/jcsirot/goto770/core"
 )
@@ -22,8 +24,14 @@ func init() {
 }
 
 func main() {
+	var wg sync.WaitGroup
 	glog.Infoln("Starting GoTo7/70")
 	defer glog.Flush()
-	go core.Start()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		core.Start()
+	}()
+	wg.Wait()
 	runtime.LockOSThread()
 }
