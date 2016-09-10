@@ -25,7 +25,7 @@ VERSION_FLAG=-ldflags "-X main.Version=$(VERSION) -X main.GitHash=$(BUILDHASH) -
 #        Main targets
 # -----------------------------------------------------------------
 
-all: clean test build
+all: clean build test
 
 help:
 	@echo
@@ -50,13 +50,16 @@ clean:
 	@rm -Rf *.test
 	@rm -Rf build
 
+prepare_test:
+	@go get -v github.com/assertgo/assert
+
 build: format
 	@go build -v $(VERSION_FLAG) -o $(GO)/bin/goto770 goto770.go
 
 format:
 	@go fmt $(PKGS)
 
-test:
+test: prepare_test
 	@go test -v -cover $(PKGS);
 
 .PHONY: all test clean
