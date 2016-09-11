@@ -102,7 +102,7 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x07] = Opcode{func() { c.asr(c.direct()) }, 6}
 	opcodes[0x08] = Opcode{func() { c.asl(c.direct()) }, 6}
 	opcodes[0x09] = Opcode{func() { c.rol(c.direct()) }, 6}
-	//opcodes[0x0a] = Opcode{func() { c.dec(c.direct()) }, 6}
+	opcodes[0x0a] = Opcode{func() { c.dec(c.direct()) }, 6}
 	opcodes[0x40] = Opcode{func() { c.nega() }, 2}
 	opcodes[0x43] = Opcode{func() { c.coma() }, 2}
 	opcodes[0x44] = Opcode{func() { c.lsra() }, 2}
@@ -110,6 +110,7 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x47] = Opcode{func() { c.asra() }, 2}
 	opcodes[0x48] = Opcode{func() { c.asla() }, 2}
 	opcodes[0x49] = Opcode{func() { c.rola() }, 2}
+	opcodes[0x4a] = Opcode{func() { c.deca() }, 2}
 	opcodes[0x50] = Opcode{func() { c.negb() }, 2}
 	opcodes[0x53] = Opcode{func() { c.comb() }, 2}
 	opcodes[0x54] = Opcode{func() { c.lsrb() }, 2}
@@ -117,6 +118,7 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x57] = Opcode{func() { c.asrb() }, 2}
 	opcodes[0x58] = Opcode{func() { c.aslb() }, 2}
 	opcodes[0x59] = Opcode{func() { c.rolb() }, 2}
+	opcodes[0x5a] = Opcode{func() { c.decb() }, 2}
 	//opcodes[0x60] = Opcode{func() { c.com(c.indexed()) }, 6}
 	//opcodes[0x63] = Opcode{func() { c.com(c.indexed()) }, 6}
 	//opcodes[0x64] = Opcode{func() { c.lsr(c.extended()) }, 6}
@@ -404,4 +406,23 @@ func (c *CPU) asla() {
 /** Arithmetic Shift Left / Logical Shift Left Register B - H?NxZxVxCx */
 func (c *CPU) aslb() {
 	c.b = c.asl_(c.b)
+}
+
+func (c *CPU) dec_(value Word) Word {
+	tmp := value - 1
+	c.testSetZN(tmp)
+	c.updateV(value == 0x80)
+	return tmp
+}
+
+func (c *CPU) dec(address uint16) {
+	c.write(address, c.dec_(c.read(address)))
+}
+
+func (c *CPU) deca() {
+	c.a = c.dec_(c.a)
+}
+
+func (c *CPU) decb() {
+	c.b = c.dec_(c.b)
 }

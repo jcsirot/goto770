@@ -667,3 +667,107 @@ func TestASLCarryAndOverflow(t *testing.T) {
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(2)
 }
+
+func TestDECDirect(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	cpu.dp = 0x20
+	ram[0x1000] = 0x0a // DEC Direct
+	ram[0x1001] = 0x0a
+	ram[0x200a] = 0x2b
+	cpu.step()
+	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x2a)
+	assert.ThatBool(cpu.getN()).IsFalse()
+	assert.ThatBool(cpu.getZ()).IsFalse()
+	assert.ThatBool(cpu.getV()).IsFalse()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(6)
+}
+
+func TestDECA(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	ram[0x1000] = 0x4a // DECA
+	cpu.a = 0x2b
+	cpu.step()
+	assert.That(cpu.a).AsInt().IsEqualTo(0x2a)
+	assert.ThatBool(cpu.getN()).IsFalse()
+	assert.ThatBool(cpu.getZ()).IsFalse()
+	assert.ThatBool(cpu.getV()).IsFalse()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(2)
+}
+
+func TestDECB(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	ram[0x1000] = 0x5a // DECB
+	cpu.b = 0x2b
+	cpu.step()
+	assert.That(cpu.b).AsInt().IsEqualTo(0x2a)
+	assert.ThatBool(cpu.getN()).IsFalse()
+	assert.ThatBool(cpu.getZ()).IsFalse()
+	assert.ThatBool(cpu.getV()).IsFalse()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(2)
+}
+
+func TestDECZero(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	ram[0x1000] = 0x4a // DECA
+	cpu.a = 0x01
+	cpu.step()
+	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
+	assert.ThatBool(cpu.getN()).IsFalse()
+	assert.ThatBool(cpu.getZ()).IsTrue()
+	assert.ThatBool(cpu.getV()).IsFalse()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(2)
+}
+
+func TestDECNegative(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	ram[0x1000] = 0x4a // DECA
+	cpu.a = 0x00
+	cpu.step()
+	assert.That(cpu.a).AsInt().IsEqualTo(0xff)
+	assert.ThatBool(cpu.getN()).IsTrue()
+	assert.ThatBool(cpu.getZ()).IsFalse()
+	assert.ThatBool(cpu.getV()).IsFalse()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(2)
+}
+
+func TestDECOverflow(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	ram[0x1000] = 0x4a // DECA
+	cpu.a = 0x80
+	cpu.step()
+	assert.That(cpu.a).AsInt().IsEqualTo(0x7f)
+	assert.ThatBool(cpu.getN()).IsFalse()
+	assert.ThatBool(cpu.getZ()).IsFalse()
+	assert.ThatBool(cpu.getV()).IsTrue()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(2)
+}
