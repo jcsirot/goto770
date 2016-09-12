@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 type Opcode struct {
 	f      func()
 	cycles uint64
@@ -42,10 +44,40 @@ func (c *CPU) direct() uint16 {
 	return ea
 }
 
+func (c *CPU) immediate() uint16 {
+	ea := c.pc
+	c.pc++
+	return ea
+}
+
 func (c *CPU) extended() uint16 {
 	ea := uint16(c.readw(c.pc))
 	c.pc += 2
 	return ea
+}
+
+func (c *CPU) relative() uint16 {
+	offset := int8(c.read(c.pc))
+	c.pc++
+	address := c.pc
+	if offset < 0 {
+		address -= uint16(-offset)
+	} else {
+		address += uint16(offset)
+	}
+	return address
+}
+
+func (c *CPU) lrelative() uint16 {
+	offset := int16(c.readw(c.pc))
+	c.pc += 2
+	address := c.pc
+	if offset < 0 {
+		address -= uint16(-offset)
+	} else {
+		address += uint16(offset)
+	}
+	return address
 }
 
 // Cpu structure
@@ -61,7 +93,7 @@ type CPU struct {
 	/// User stack pointer register
 	u DWord
 	/// Hardware stack pointer register
-	s DWord
+	s uint16
 	/// Direct page register
 	dp Word
 	/// Condition code regsiter
@@ -72,6 +104,10 @@ type CPU struct {
 	ram Memory
 	///
 	clock uint64
+}
+
+func (c *CPU) d() DWord {
+	return DWord(int(c.a)<<8 | int(c.b))
 }
 
 // Initialize the Cpu
@@ -103,6 +139,34 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x08] = Opcode{func() { c.asl(c.direct()) }, 6}
 	opcodes[0x09] = Opcode{func() { c.rol(c.direct()) }, 6}
 	opcodes[0x0a] = Opcode{func() { c.dec(c.direct()) }, 6}
+	opcodes[0x0c] = Opcode{func() { c.inc(c.direct()) }, 6}
+	opcodes[0x0d] = Opcode{func() { c.tst(c.direct()) }, 6}
+	opcodes[0x0e] = Opcode{func() { c.jmp(c.direct()) }, 3}
+	opcodes[0x0f] = Opcode{func() { c.clr(c.direct()) }, 6}
+	opcodes[0x12] = Opcode{func() { c.nop() }, 2}
+	opcodes[0x13] = Opcode{func() { c.sync() }, 4}
+	opcodes[0x16] = Opcode{func() { c.bra(c.lrelative()) }, 5}
+	opcodes[0x17] = Opcode{func() { c.bsr(c.lrelative()) }, 9}
+	opcodes[0x19] = Opcode{func() { c.daa() }, 2}
+	opcodes[0x1a] = Opcode{func() { c.orcc(c.immediate()) }, 3}
+	opcodes[0x1c] = Opcode{func() { c.andcc(c.immediate()) }, 3}
+	opcodes[0x1d] = Opcode{func() { c.sex() }, 2}
+	opcodes[0x1e] = Opcode{func() { c.exg(c.immediate()) }, 8}
+	opcodes[0x1f] = Opcode{func() { c.tfr(c.immediate()) }, 6}
+	opcodes[0x20] = Opcode{func() { c.bra(c.relative()) }, 3}
+	opcodes[0x21] = Opcode{func() { c.brn(c.relative()) }, 3}
+	opcodes[0x22] = Opcode{func() { c.bhi(c.relative()) }, 3}
+	opcodes[0x23] = Opcode{func() { c.bls(c.relative()) }, 3}
+	opcodes[0x24] = Opcode{func() { c.bcc(c.relative()) }, 3}
+	opcodes[0x25] = Opcode{func() { c.blo(c.relative()) }, 3}
+	opcodes[0x26] = Opcode{func() { c.bne(c.relative()) }, 3}
+	opcodes[0x27] = Opcode{func() { c.beq(c.relative()) }, 3}
+	opcodes[0x28] = Opcode{func() { c.bvc(c.relative()) }, 3}
+	opcodes[0x29] = Opcode{func() { c.bvs(c.relative()) }, 3}
+	opcodes[0x2a] = Opcode{func() { c.bpl(c.relative()) }, 3}
+	opcodes[0x2b] = Opcode{func() { c.bmi(c.relative()) }, 3}
+	opcodes[0x2c] = Opcode{func() { c.bge(c.relative()) }, 3}
+	opcodes[0x2d] = Opcode{func() { c.blt(c.relative()) }, 3}
 	opcodes[0x40] = Opcode{func() { c.nega() }, 2}
 	opcodes[0x43] = Opcode{func() { c.coma() }, 2}
 	opcodes[0x44] = Opcode{func() { c.lsra() }, 2}
@@ -111,6 +175,9 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x48] = Opcode{func() { c.asla() }, 2}
 	opcodes[0x49] = Opcode{func() { c.rola() }, 2}
 	opcodes[0x4a] = Opcode{func() { c.deca() }, 2}
+	opcodes[0x4c] = Opcode{func() { c.inca() }, 2}
+	opcodes[0x4d] = Opcode{func() { c.tsta() }, 2}
+	opcodes[0x4f] = Opcode{func() { c.clra() }, 2}
 	opcodes[0x50] = Opcode{func() { c.negb() }, 2}
 	opcodes[0x53] = Opcode{func() { c.comb() }, 2}
 	opcodes[0x54] = Opcode{func() { c.lsrb() }, 2}
@@ -119,6 +186,9 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x58] = Opcode{func() { c.aslb() }, 2}
 	opcodes[0x59] = Opcode{func() { c.rolb() }, 2}
 	opcodes[0x5a] = Opcode{func() { c.decb() }, 2}
+	opcodes[0x5c] = Opcode{func() { c.incb() }, 2}
+	opcodes[0x5d] = Opcode{func() { c.tstb() }, 2}
+	opcodes[0x5f] = Opcode{func() { c.clrb() }, 2}
 	//opcodes[0x60] = Opcode{func() { c.com(c.indexed()) }, 6}
 	//opcodes[0x63] = Opcode{func() { c.com(c.indexed()) }, 6}
 	//opcodes[0x64] = Opcode{func() { c.lsr(c.extended()) }, 6}
@@ -142,6 +212,17 @@ func (c *CPU) step() uint64 {
 
 	return opcode.cycles
 
+}
+func (c *CPU) getH() bool {
+	return c.cc&halfCarry == halfCarry
+}
+
+func (c *CPU) setH() {
+	c.cc |= halfCarry
+}
+
+func (c *CPU) clearH() {
+	c.cc &= 0xff ^ halfCarry
 }
 
 func (c *CPU) getC() bool {
@@ -233,14 +314,19 @@ func (c *CPU) read(address uint16) Word {
 	return c.ram[address]
 }
 
-func (c *CPU) write(address uint16, value Word) {
-	c.ram[address] = value
-}
-
 func (c *CPU) readw(address uint16) DWord {
 	hi := c.read(address)
 	lo := c.read(address + 1)
 	return (DWord)(uint16(hi)<<8 | uint16(lo))
+}
+
+func (c *CPU) write(address uint16, value Word) {
+	c.ram[address] = value
+}
+
+func (c *CPU) writew(address uint16, value DWord) {
+	c.write(address+1, Word(value&0xff))
+	c.write(address, Word((value >> 8)))
 }
 
 /** Negate - H?NxZxVxCx */
@@ -408,6 +494,7 @@ func (c *CPU) aslb() {
 	c.b = c.asl_(c.b)
 }
 
+/** Decrement - NxZxVx */
 func (c *CPU) dec_(value Word) Word {
 	tmp := value - 1
 	c.testSetZN(tmp)
@@ -415,14 +502,331 @@ func (c *CPU) dec_(value Word) Word {
 	return tmp
 }
 
+/** Decrement - NxZxVx */
 func (c *CPU) dec(address uint16) {
 	c.write(address, c.dec_(c.read(address)))
 }
 
+/** Decrement Register A - NxZxVx */
 func (c *CPU) deca() {
 	c.a = c.dec_(c.a)
 }
 
+/** Decrement Register B - NxZxVx */
 func (c *CPU) decb() {
 	c.b = c.dec_(c.b)
+}
+
+/** Increment - NxZxVx */
+func (c *CPU) inc_(value Word) Word {
+	tmp := value + 1
+	c.testSetZN(tmp)
+	c.updateV(value == 0x7f)
+	return tmp
+}
+
+/** Increment - NxZxVx */
+func (c *CPU) inc(address uint16) {
+	c.write(address, c.inc_(c.read(address)))
+}
+
+/** Increment Register A - NxZxVx */
+func (c *CPU) inca() {
+	c.a = c.inc_(c.a)
+}
+
+/** Increment Register B - NxZxVx */
+func (c *CPU) incb() {
+	c.b = c.inc_(c.b)
+}
+
+/** Test - NxZxV0 */
+func (c *CPU) tst_(value Word) {
+	c.testSetZN(value)
+	c.clearV()
+}
+
+/** Test - NxZxV0 */
+func (c *CPU) tst(address uint16) {
+	c.tst_(c.read(address))
+}
+
+/** Test Register A - NxZxV0 */
+func (c *CPU) tsta() {
+	c.tst_(c.a)
+}
+
+/** Test Register B - NxZxV0 */
+func (c *CPU) tstb() {
+	c.tst_(c.b)
+}
+
+/** Jump - NxZxV0 */
+func (c *CPU) jmp(address uint16) {
+	c.pc = address
+}
+
+/** Clear N0Z1V0C0 */
+func (c *CPU) clr(address uint16) {
+	c.write(address, 0)
+	c.clearN()
+	c.setZ()
+	c.clearV()
+	c.clearC()
+}
+
+/** Clear N0Z1V0C0 */
+func (c *CPU) clra() {
+	c.a = 0
+	c.clearN()
+	c.setZ()
+	c.clearV()
+	c.clearC()
+}
+
+/** Clear N0Z1V0C0 */
+func (c *CPU) clrb() {
+	c.b = 0
+	c.clearN()
+	c.setZ()
+	c.clearV()
+	c.clearC()
+}
+
+func (c *CPU) nop() {
+}
+
+/** Synchronize to External Event */
+func (c *CPU) sync() {
+	// Not supported
+}
+
+/** (Long) Branch Always */
+func (c *CPU) bra(address uint16) {
+	c.pc = address
+}
+
+/** Long Branch to Subroutine */
+func (c *CPU) bsr(address uint16) {
+	c.s -= 2
+	c.writew(c.s, DWord(c.pc))
+	c.pc = address
+}
+
+/** Decimal Addition Adjust - NxZxV?Cx */
+func (c *CPU) daa() {
+	ah := c.a & 0xf0
+	al := c.a & 0x0f
+	cf := 0
+	if al > 0x09 || c.getH() {
+		cf |= 0x06
+	}
+	if ah > 0x80 && al > 0x09 {
+		cf |= 0x60
+	}
+	if ah > 0x90 || c.getC() {
+		cf |= 0x60
+	}
+	tmp := uint16(c.a) + uint16(cf)
+	c.a = Word(tmp)
+	carry := c.getC()
+	c.testSetZN(c.a)
+	c.updateC(carry || tmp > 0xff)
+}
+
+/** Inclusive OR Memory Immediate into Condition Code Register */
+func (c *CPU) orcc(address uint16) {
+	value := c.read(address)
+	c.cc |= uint8(value)
+}
+
+/** Logical AND Immediate Memory into Condition Code Register */
+func (c *CPU) andcc(address uint16) {
+	value := c.read(address)
+	c.cc &= uint8(value)
+}
+
+/** Sign Extended - NxZx */
+func (c *CPU) sex() {
+	if c.b&0x80 == 0 {
+		c.a = 0
+	} else {
+		c.a = 0xff
+	}
+	if c.d() == 0 {
+		c.setZ()
+	} else {
+		c.clearZ()
+	}
+	if (c.d() & 0x8000) != 0 {
+		c.setN()
+	} else {
+		c.clearN()
+	}
+}
+
+func (c *CPU) getRegisterFromCode(code int) uint16 {
+	switch code {
+	case 0:
+		return uint16(c.d())
+	case 1:
+		return uint16(c.x)
+	case 2:
+		return uint16(c.y)
+	case 3:
+		return uint16(c.u)
+	case 4:
+		return uint16(c.s)
+	case 5:
+		return uint16(c.pc)
+	case 8:
+		return uint16(c.a)
+	case 9:
+		return uint16(c.b)
+	case 10:
+		return uint16(c.cc)
+	case 11:
+		return uint16(c.dp)
+	default:
+		panic(fmt.Sprintf("Invalid register code: %d", code))
+	}
+}
+
+func (c *CPU) setRegisterFromCode(code int, value uint16) {
+	switch code {
+	case 0:
+		c.a = Word(value >> 8)
+		c.b = Word(value)
+	case 1:
+		c.x = DWord(value)
+	case 2:
+		c.y = DWord(value)
+	case 3:
+		c.u = DWord(value)
+	case 4:
+		c.s = value
+	case 5:
+		c.pc = value
+	case 8:
+		c.a = Word(value)
+	case 9:
+		c.b = Word(value)
+	case 10:
+		c.cc = uint8(value)
+	case 11:
+		c.dp = Word(value)
+	default:
+		panic(fmt.Sprintf("Invalid register code: %d", code))
+	}
+}
+
+/** Exchange Registers */
+func (c *CPU) exg(address uint16) {
+	code := int(c.read(address))
+	if ((code&0x80)>>7)^((code&0x08)>>3) == 1 {
+		panic("Try to exchange 8-bit with 16-bits registers")
+	}
+	value1 := c.getRegisterFromCode(code >> 4)
+	value2 := c.getRegisterFromCode(code & 0x0f)
+	c.setRegisterFromCode(code>>4, value2)
+	c.setRegisterFromCode(code&0x0f, value1)
+}
+
+/** Transfer Register to Register */
+func (c *CPU) tfr(address uint16) {
+	code := int(c.read(address))
+	if ((code&0x80)>>7)^((code&0x08)>>3) == 1 {
+		panic("Try to transfer 8-bit and 16-bits registers")
+	}
+	value := c.getRegisterFromCode(code >> 4)
+	c.setRegisterFromCode(code&0x0f, value)
+}
+
+/** Branch Never */
+func (c *CPU) brn(address uint16) {
+	// NOP
+}
+
+/** Branch if Higher - Branch when Z = 0 && C = 0 */
+func (c *CPU) bhi(address uint16) {
+	if !c.getC() && !c.getZ() {
+		c.pc = address
+	}
+}
+
+/** Branch on Lower or Same - Branch when Z = 1 || C = 1 */
+func (c *CPU) bls(address uint16) {
+	if c.getC() || c.getZ() {
+		c.pc = address
+	}
+}
+
+/** Branch on Carry Clear - Branch when C = 0 */
+func (c *CPU) bcc(address uint16) {
+	if !c.getC() {
+		c.pc = address
+	}
+}
+
+/** Branch on Lower - Branch when C = 1 */
+func (c *CPU) blo(address uint16) {
+	if c.getC() {
+		c.pc = address
+	}
+}
+
+/** Branch on Not Equal - Branch when Z = 0 */
+func (c *CPU) bne(address uint16) {
+	if !c.getZ() {
+		c.pc = address
+	}
+}
+
+/** Branch on Equal - Branch when Z = 1 */
+func (c *CPU) beq(address uint16) {
+	if c.getZ() {
+		c.pc = address
+	}
+}
+
+/** Branch on Overflow Clear - Branch when V = 0 */
+func (c *CPU) bvc(address uint16) {
+	if !c.getV() {
+		c.pc = address
+	}
+}
+
+/** Branch on Overflow Set - Branch when V = 1 */
+func (c *CPU) bvs(address uint16) {
+	if c.getV() {
+		c.pc = address
+	}
+}
+
+/** Branch on Plus - Branch when N = 0 */
+func (c *CPU) bpl(address uint16) {
+	if !c.getN() {
+		c.pc = address
+	}
+}
+
+/** Branch on Minus - Branch when N = 1 */
+func (c *CPU) bmi(address uint16) {
+	if c.getN() {
+		c.pc = address
+	}
+}
+
+/** Branch on Greater than or Equal to Zero - Branch when N ^ V = 0 */
+func (c *CPU) bge(address uint16) {
+	if c.getN() == c.getV() {
+		c.pc = address
+	}
+}
+
+/** Branch on Less than Zero - Branch if N ^ V = 1 */
+func (c *CPU) blt(address uint16) {
+	if c.getN() != c.getV() {
+		c.pc = address
+	}
 }
