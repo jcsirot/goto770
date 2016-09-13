@@ -1571,3 +1571,67 @@ func TestBLTN0V1(t *testing.T) {
 func TestBLTN1V1(t *testing.T) {
 	branchingOpcodeTest(t, 0x2d, []uint8{negative, overflow}, false)
 }
+
+func TestBGTZ0N0V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{}, true)
+}
+
+func TestBGTZ0N0V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{overflow}, false)
+}
+
+func TestBGTZ0N1V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{negative}, false)
+}
+
+func TestBGTZ0N1V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{overflow, negative}, true)
+}
+
+func TestBGTZ1N0V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{zero}, false)
+}
+
+func TestBGTZ1N0V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{zero, overflow}, false)
+}
+
+func TestBGTZ1N1V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{zero, negative}, false)
+}
+
+func TestBGTZ1N1V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2e, []uint8{zero, overflow, negative}, false)
+}
+
+func TestBLEZ0N0V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{}, false)
+}
+
+func TestBLEZ0N0V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{overflow}, true)
+}
+
+func TestBLEZ0N1V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{negative}, true)
+}
+
+func TestBLEZ0N1V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{overflow, negative}, false)
+}
+
+func TestBLEZ1N0V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{zero}, true)
+}
+
+func TestBLEZ1N0V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{zero, overflow}, true)
+}
+
+func TestBLEZ1N1V0(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{zero, negative}, true)
+}
+
+func TestBLEZ1N1V1(t *testing.T) {
+	branchingOpcodeTest(t, 0x2f, []uint8{zero, overflow, negative}, true)
+}

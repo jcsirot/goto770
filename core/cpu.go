@@ -38,48 +38,6 @@ const (
 
 /* Addressing modes */
 
-func (c *CPU) direct() uint16 {
-	ea := uint16(c.dp)<<8 | uint16(c.read(c.pc))
-	c.pc++
-	return ea
-}
-
-func (c *CPU) immediate() uint16 {
-	ea := c.pc
-	c.pc++
-	return ea
-}
-
-func (c *CPU) extended() uint16 {
-	ea := uint16(c.readw(c.pc))
-	c.pc += 2
-	return ea
-}
-
-func (c *CPU) relative() uint16 {
-	offset := int8(c.read(c.pc))
-	c.pc++
-	address := c.pc
-	if offset < 0 {
-		address -= uint16(-offset)
-	} else {
-		address += uint16(offset)
-	}
-	return address
-}
-
-func (c *CPU) lrelative() uint16 {
-	offset := int16(c.readw(c.pc))
-	c.pc += 2
-	address := c.pc
-	if offset < 0 {
-		address -= uint16(-offset)
-	} else {
-		address += uint16(offset)
-	}
-	return address
-}
-
 // Cpu structure
 type CPU struct {
 	/// Accumulator register
@@ -91,7 +49,7 @@ type CPU struct {
 	/// Index register
 	y DWord
 	/// User stack pointer register
-	u DWord
+	u uint16
 	/// Hardware stack pointer register
 	s uint16
 	/// Direct page register
@@ -167,6 +125,10 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x2b] = Opcode{func() { c.bmi(c.relative()) }, 3}
 	opcodes[0x2c] = Opcode{func() { c.bge(c.relative()) }, 3}
 	opcodes[0x2d] = Opcode{func() { c.blt(c.relative()) }, 3}
+	opcodes[0x2e] = Opcode{func() { c.bgt(c.relative()) }, 3}
+	opcodes[0x2f] = Opcode{func() { c.ble(c.relative()) }, 3}
+	opcodes[0x30] = Opcode{func() { c.leax(c.indexed()) }, 4}
+	opcodes[0x31] = Opcode{func() { c.leay(c.indexed()) }, 4}
 	opcodes[0x40] = Opcode{func() { c.nega() }, 2}
 	opcodes[0x43] = Opcode{func() { c.coma() }, 2}
 	opcodes[0x44] = Opcode{func() { c.lsra() }, 2}
@@ -702,7 +664,7 @@ func (c *CPU) setRegisterFromCode(code int, value uint16) {
 	case 2:
 		c.y = DWord(value)
 	case 3:
-		c.u = DWord(value)
+		c.u = value
 	case 4:
 		c.s = value
 	case 5:
@@ -824,9 +786,41 @@ func (c *CPU) bge(address uint16) {
 	}
 }
 
-/** Branch on Less than Zero - Branch if N ^ V = 1 */
+/** Branch on Less than Zero - Branch when N ^ V = 1 */
 func (c *CPU) blt(address uint16) {
 	if c.getN() != c.getV() {
 		c.pc = address
+	}
+}
+
+/** Branch on Greater - Branch when Z = 0 && (N ^ V) = 0 */
+func (c *CPU) bgt(address uint16) {
+	if !c.getZ() && c.getN() == c.getV() {
+		c.pc = address
+	}
+}
+
+/** Branch on Less than or Equal to Zero - Branch when Z = 1 || (N ^ V) = 1 */
+func (c *CPU) ble(address uint16) {
+	if c.getZ() || c.getN() != c.getV() {
+		c.pc = address
+	}
+}
+
+func (c *CPU) leax(address uint16) {
+	c.x = DWord(address)
+	if address == 0 {
+		c.setZ()
+	} else {
+		c.clearZ()
+	}
+}
+
+func (c *CPU) leay(address uint16) {
+	c.y = DWord(address)
+	if address == 0 {
+		c.setZ()
+	} else {
+		c.clearZ()
 	}
 }
