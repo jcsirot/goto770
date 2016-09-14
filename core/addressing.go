@@ -95,20 +95,114 @@ func (c *CPU) getIndexedAddress(postbyte uint8) uint16 {
 		c.clock++
 		offset := postbyte & 0x1f
 		if offset > 0x0f {
-			address += uint16(32 - offset)
+			address -= uint16(32 - offset)
 		} else {
 			address += uint16(offset)
 		}
-	} else if postbyte&0x0f == 0x01 {
+	} else if postbyte&0x0f == 0x00 {
 		/* idxinc1 - Autoincrement by 1 from Register */
 		address = c.readIndexedRegister(postbyte)
 		c.writeIndexedRegister(postbyte, address+1)
 		c.clock += 2
-	} else if postbyte&0x0f == 0x02 {
+	} else if postbyte&0x0f == 0x01 {
 		/* idxinc2 - Autoincrement by 2 from Register */
 		address = c.readIndexedRegister(postbyte)
 		c.writeIndexedRegister(postbyte, address+2)
 		c.clock += 3
+	} else if postbyte&0x0f == 0x02 {
+		/* idxdec1 - Autodecrement by 1 from Register */
+		address = c.readIndexedRegister(postbyte) - 1
+		c.writeIndexedRegister(postbyte, address)
+		c.clock += 2
+	} else if postbyte&0x0f == 0x03 {
+		/* Autodecrement by 2 from Register */
+		address = c.readIndexedRegister(postbyte) - 2
+		c.writeIndexedRegister(postbyte, address)
+		c.clock += 3
+	} else if postbyte&0x0f == 0x04 {
+		/* No Offset from Register */
+		address = c.readIndexedRegister(postbyte)
+	} else if postbyte&0x0f == 0x05 {
+		/* idxb - B Accumulator Offset from Register */
+		address = c.readIndexedRegister(postbyte)
+		offset := int8(c.b)
+		if offset >= 0 {
+			address += uint16(offset)
+		} else {
+			address -= uint16(-offset)
+		}
+		c.clock++
+	} else if postbyte&0x0f == 0x06 {
+		/* idxa - A Accumulator Offset from Register */
+		address = c.readIndexedRegister(postbyte)
+		offset := int8(c.a)
+		if offset >= 0 {
+			address += uint16(offset)
+		} else {
+			address -= uint16(-offset)
+		}
+		c.clock++
+	} else if postbyte&0x0f == 0x08 {
+		/* idx8off - 8 bits offset from Register */
+		address = c.readIndexedRegister(postbyte)
+		offset := int8(c.read(c.pc))
+		c.pc++
+		c.clock++
+		if offset >= 0 {
+			address += uint16(offset)
+		} else {
+			address -= uint16(-offset)
+		}
+	} else if postbyte&0x0f == 0x09 {
+		/* idx8off - 16 bits offset from Register */
+		address = c.readIndexedRegister(postbyte)
+		offset := int16(c.readw(c.pc))
+		c.pc += 2
+		if offset >= 0 {
+			address += uint16(offset)
+		} else {
+			address -= uint16(-offset)
+		}
+		c.clock += 4
+	} else if postbyte&0x0f == 0x0b {
+		/* idxd - D Accumulator Offset from Register */
+		address = c.readIndexedRegister(postbyte)
+		offset := int16(c.d())
+		if offset >= 0 {
+			address += uint16(offset)
+		} else {
+			address -= uint16(-offset)
+		}
+		c.clock += 4
+	} else if postbyte&0x0f == 0x0c {
+		/* idxpc8 - 8 bits Offset from Program Counter */
+		offset := int8(c.read(c.pc))
+		c.pc++
+		address = c.pc
+		if offset >= 0 {
+			address += uint16(offset)
+		} else {
+			address -= uint16(-offset)
+		}
+		c.clock++
+	} else if postbyte&0x0f == 0x0d {
+		/* idxpc16 - 16 bits Offset from Program Counter */
+		offset := int16(c.read(c.pc))
+		c.pc += 2
+		address = c.pc
+		if offset >= 0 {
+			address += uint16(offset)
+		} else {
+			address -= uint16(-offset)
+		}
+		c.clock += 5
+	} else if postbyte&0x0f == 0x0f {
+		/* idxext - Extended Indirect */
+		address = uint16(c.readw(c.pc))
+		c.pc += 2
+		c.clock += 2
+	} else {
+		panic(fmt.Sprintf("Undefined indexed submode code %d at pc=%x", postbyte, c.pc))
 	}
 	return address
 }

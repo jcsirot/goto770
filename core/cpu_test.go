@@ -1635,3 +1635,52 @@ func TestBLEZ1N1V0(t *testing.T) {
 func TestBLEZ1N1V1(t *testing.T) {
 	branchingOpcodeTest(t, 0x2f, []uint8{zero, overflow, negative}, true)
 }
+
+func TestLEAX(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	cpu.y = 0xd000
+	cpu.a = 0x5a
+	ram[0x1000] = 0x30 // LEAX
+	ram[0x1001] = 0xa6 // EA = Y + ACCA
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.That(cpu.x).AsInt().IsEqualTo(0xd05a)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(5)
+}
+
+func TestLEAXZero(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	cpu.y = 0x100
+	cpu.a = 0xff
+	cpu.b = 0x00       // D = 0xff00
+	ram[0x1000] = 0x30 // LEAX
+	ram[0x1001] = 0xab // EA = Y + ACCD
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.That(cpu.x).AsInt().IsEqualTo(0)
+	assert.ThatBool(cpu.getZ()).IsTrue()
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(8)
+}
+
+func TestLEAy(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	ram[0x1000] = 0x31 // LEAY
+	ram[0x1001] = 0x8c // EA = PC + 8 bits offset
+	ram[0x1002] = 0x0a
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1003)
+	assert.That(cpu.y).AsInt().IsEqualTo(0x100d)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(5)
+}
