@@ -1660,7 +1660,8 @@ func TestLEAXZero(t *testing.T) {
 	cpu.pc = 0x1000
 	cpu.y = 0x100
 	cpu.a = 0xff
-	cpu.b = 0x00       // D = 0xff00
+	cpu.b = 0x00 // D = 0xff00
+	cpu.x = 0x0100
 	ram[0x1000] = 0x30 // LEAX
 	ram[0x1001] = 0xab // EA = Y + ACCD
 	cpu.step()
@@ -1670,7 +1671,7 @@ func TestLEAXZero(t *testing.T) {
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(8)
 }
 
-func TestLEAy(t *testing.T) {
+func TestLEAY(t *testing.T) {
 	assert := assert.New(t)
 	var cpu CPU
 	ram := NewRam()
@@ -1683,4 +1684,56 @@ func TestLEAy(t *testing.T) {
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1003)
 	assert.That(cpu.y).AsInt().IsEqualTo(0x100d)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(5)
+}
+
+func TestLEAYZero(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	cpu.y = 0x0100
+	cpu.u = 0
+	ram[0x1000] = 0x31 // LEAY
+	ram[0x1001] = 0xc4 // EA = U
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.That(cpu.y).AsInt().IsEqualTo(0)
+	assert.ThatBool(cpu.getZ()).IsTrue()
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(4)
+}
+
+func TestLEAS(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	cpu.x = 0x800
+	ram[0x1000] = 0x32 // LEAS
+	ram[0x1001] = 0x94 // EA = [X]
+	ram[0x800] = 0x1f
+	ram[0x801] = 0x40
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.That(cpu.s).AsInt().IsEqualTo(0x1f40)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(7)
+}
+
+func TestLEAU(t *testing.T) {
+	assert := assert.New(t)
+	var cpu CPU
+	ram := NewRam()
+	cpu.Initialize(ram)
+	cpu.pc = 0x1000
+	cpu.y = 0x2000
+	ram[0x1000] = 0x33 // LEAU
+	ram[0x1001] = 0xb1 // EA = [Y++]
+	ram[0x2000] = 0x1f
+	ram[0x2001] = 0x40
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.That(cpu.u).AsInt().IsEqualTo(0x1f40)
+	assert.That(cpu.y).AsInt().IsEqualTo(0x2002)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(10)
 }

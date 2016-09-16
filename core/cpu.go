@@ -129,6 +129,12 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x2f] = Opcode{func() { c.ble(c.relative()) }, 3}
 	opcodes[0x30] = Opcode{func() { c.leax(c.indexed()) }, 4}
 	opcodes[0x31] = Opcode{func() { c.leay(c.indexed()) }, 4}
+	opcodes[0x32] = Opcode{func() { c.leas(c.indexed()) }, 4}
+	opcodes[0x33] = Opcode{func() { c.leau(c.indexed()) }, 4}
+	//	opcodes[0x34] = Opcode{func() { c.pshs(c.immediate()) }, 5}
+	//	opcodes[0x35] = Opcode{func() { c.puls(c.immediate()) }, 5}
+	//	opcodes[0x36] = Opcode{func() { c.pshu(c.immediate()) }, 5}
+	//	opcodes[0x37] = Opcode{func() { c.pulu(c.immediate()) }, 5}
 	opcodes[0x40] = Opcode{func() { c.nega() }, 2}
 	opcodes[0x43] = Opcode{func() { c.coma() }, 2}
 	opcodes[0x44] = Opcode{func() { c.lsra() }, 2}
@@ -151,9 +157,9 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x5c] = Opcode{func() { c.incb() }, 2}
 	opcodes[0x5d] = Opcode{func() { c.tstb() }, 2}
 	opcodes[0x5f] = Opcode{func() { c.clrb() }, 2}
-	//opcodes[0x60] = Opcode{func() { c.com(c.indexed()) }, 6}
-	//opcodes[0x63] = Opcode{func() { c.com(c.indexed()) }, 6}
-	//opcodes[0x64] = Opcode{func() { c.lsr(c.extended()) }, 6}
+	opcodes[0x60] = Opcode{func() { c.com(c.indexed()) }, 6}
+	opcodes[0x63] = Opcode{func() { c.com(c.indexed()) }, 6}
+	opcodes[0x64] = Opcode{func() { c.lsr(c.extended()) }, 6}
 	opcodes[0x70] = Opcode{func() { c.neg(c.extended()) }, 7}
 	opcodes[0x73] = Opcode{func() { c.com(c.extended()) }, 7}
 	opcodes[0x74] = Opcode{func() { c.lsr(c.extended()) }, 7}
@@ -823,4 +829,12 @@ func (c *CPU) leay(address uint16) {
 	} else {
 		c.clearZ()
 	}
+}
+
+func (c *CPU) leas(address uint16) {
+	c.s = address
+}
+
+func (c *CPU) leau(address uint16) {
+	c.u = address
 }
