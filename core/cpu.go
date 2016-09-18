@@ -41,19 +41,19 @@ const (
 // Cpu structure
 type CPU struct {
 	/// Accumulator register
-	a Word
+	a uint8
 	/// Accumulator register
-	b Word
+	b uint8
 	/// Index register
-	x DWord
+	x uint16
 	/// Index register
-	y DWord
+	y uint16
 	/// User stack pointer register
 	u uint16
 	/// Hardware stack pointer register
 	s uint16
 	/// Direct page register
-	dp Word
+	dp uint8
 	/// Condition code regsiter
 	cc uint8
 	/// Program counter register
@@ -64,8 +64,8 @@ type CPU struct {
 	clock uint64
 }
 
-func (c *CPU) d() DWord {
-	return DWord(int(c.a)<<8 | int(c.b))
+func (c *CPU) d() uint16 {
+	return uint16(int(c.a)<<8 | int(c.b))
 }
 
 // Initialize the Cpu
@@ -162,12 +162,31 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x5c] = Opcode{func() { c.incb() }, 2}
 	opcodes[0x5d] = Opcode{func() { c.tstb() }, 2}
 	opcodes[0x5f] = Opcode{func() { c.clrb() }, 2}
-	opcodes[0x60] = Opcode{func() { c.com(c.indexed()) }, 6}
+	opcodes[0x60] = Opcode{func() { c.neg(c.indexed()) }, 6}
 	opcodes[0x63] = Opcode{func() { c.com(c.indexed()) }, 6}
-	opcodes[0x64] = Opcode{func() { c.lsr(c.extended()) }, 6}
+	opcodes[0x64] = Opcode{func() { c.lsr(c.indexed()) }, 6}
+	opcodes[0x66] = Opcode{func() { c.ror(c.indexed()) }, 6}
+	opcodes[0x67] = Opcode{func() { c.asr(c.indexed()) }, 6}
+	opcodes[0x68] = Opcode{func() { c.asl(c.indexed()) }, 6}
+	opcodes[0x69] = Opcode{func() { c.rol(c.indexed()) }, 6}
+	opcodes[0x6a] = Opcode{func() { c.dec(c.indexed()) }, 6}
+	opcodes[0x6c] = Opcode{func() { c.inc(c.indexed()) }, 6}
+	opcodes[0x6d] = Opcode{func() { c.tst(c.indexed()) }, 6}
+	opcodes[0x6e] = Opcode{func() { c.jmp(c.indexed()) }, 3}
+	opcodes[0x6f] = Opcode{func() { c.clr(c.indexed()) }, 6}
 	opcodes[0x70] = Opcode{func() { c.neg(c.extended()) }, 7}
 	opcodes[0x73] = Opcode{func() { c.com(c.extended()) }, 7}
 	opcodes[0x74] = Opcode{func() { c.lsr(c.extended()) }, 7}
+	opcodes[0x76] = Opcode{func() { c.ror(c.extended()) }, 7}
+	opcodes[0x77] = Opcode{func() { c.asr(c.extended()) }, 7}
+	opcodes[0x78] = Opcode{func() { c.asl(c.extended()) }, 7}
+	opcodes[0x79] = Opcode{func() { c.rol(c.extended()) }, 7}
+	opcodes[0x7a] = Opcode{func() { c.dec(c.extended()) }, 7}
+	opcodes[0x7c] = Opcode{func() { c.inc(c.extended()) }, 7}
+	opcodes[0x7d] = Opcode{func() { c.tst(c.extended()) }, 7}
+	opcodes[0x7e] = Opcode{func() { c.jmp(c.extended()) }, 4}
+	opcodes[0x7f] = Opcode{func() { c.clr(c.extended()) }, 7}
+	opcodes[0x80] = Opcode{func() { c.suba(c.immediate()) }, 2}
 }
 
 func (c *CPU) step() uint64 {
@@ -243,7 +262,7 @@ func (c *CPU) clearZ() {
 	c.cc &= 0xff ^ zero
 }
 
-func (c *CPU) testSetZ(value Word) {
+func (c *CPU) testSetZ(value uint8) {
 	if value == 0 {
 		c.setZ()
 	} else {
@@ -263,7 +282,7 @@ func (c *CPU) clearN() {
 	c.cc &= 0xff ^ negative
 }
 
-func (c *CPU) testSetN(value Word) {
+func (c *CPU) testSetN(value uint8) {
 	if value&0x80 == 0x80 {
 		c.setN()
 	} else {
@@ -271,7 +290,7 @@ func (c *CPU) testSetN(value Word) {
 	}
 }
 
-func (c *CPU) testSetZN(value Word) {
+func (c *CPU) testSetZN(value uint8) {
 	c.testSetZ(value)
 	c.testSetN(value)
 }
@@ -316,27 +335,24 @@ func (c *CPU) setI() {
 /**     Memory access     **/
 /***************************/
 
-func (c *CPU) read(address uint16) Word {
-	return c.ram[address]
+func (c *CPU) read(address uint16) uint8 {
+	return c.ram.Read(address)
 }
 
-func (c *CPU) readw(address uint16) DWord {
-	hi := c.read(address)
-	lo := c.read(address + 1)
-	return (DWord)(uint16(hi)<<8 | uint16(lo))
+func (c *CPU) readw(address uint16) uint16 {
+	return c.ram.Readw(address)
 }
 
-func (c *CPU) write(address uint16, value Word) {
-	c.ram[address] = value
+func (c *CPU) write(address uint16, value uint8) {
+	c.ram.Write(address, value)
 }
 
-func (c *CPU) writew(address uint16, value DWord) {
-	c.write(address+1, Word(value&0xff))
-	c.write(address, Word((value >> 8)))
+func (c *CPU) writew(address uint16, value uint16) {
+	c.ram.Writew(address, value)
 }
 
 /** Negate - H?NxZxVxCx */
-func (c *CPU) neg_(value Word) Word {
+func (c *CPU) neg_(value uint8) uint8 {
 	tmp := -value
 	c.testSetZN(tmp)
 	c.updateC(value != 0)
@@ -360,7 +376,7 @@ func (c *CPU) negb() {
 }
 
 /** Complement - H?NxZxV0C1 */
-func (c *CPU) com_(value Word) Word {
+func (c *CPU) com_(value uint8) uint8 {
 	tmp := value ^ 0xff
 	c.testSetZN(tmp)
 	c.setC()
@@ -384,7 +400,7 @@ func (c *CPU) comb() {
 }
 
 /** Logical Shift Right - N0ZxCx */
-func (c *CPU) lsr_(value Word) Word {
+func (c *CPU) lsr_(value uint8) uint8 {
 	tmp := value >> 1
 	c.testSetZN(tmp)
 	c.updateC(value&1 == 1)
@@ -407,7 +423,7 @@ func (c *CPU) lsrb() {
 }
 
 /** Rotate Right - NxZxCx */
-func (c *CPU) ror_(value Word) Word {
+func (c *CPU) ror_(value uint8) uint8 {
 	tmp := (value >> 1) | (value << 7)
 	c.testSetZN(tmp)
 	c.updateC(value&1 == 1)
@@ -430,7 +446,7 @@ func (c *CPU) rorb() {
 }
 
 /** Rotate Left - NxZxVxCx */
-func (c *CPU) rol_(value Word) Word {
+func (c *CPU) rol_(value uint8) uint8 {
 	tmp := (value << 1) | ((value >> 7) & 0x01)
 	c.testSetZN(tmp)
 	c.updateC(value>>7 == 0x01)
@@ -454,7 +470,7 @@ func (c *CPU) rolb() {
 }
 
 /** Arithmetic Shift Right - H?NxZxCx */
-func (c *CPU) asr_(value Word) Word {
+func (c *CPU) asr_(value uint8) uint8 {
 	tmp := (value >> 1) | (value & 0x80)
 	c.testSetZN(tmp)
 	c.updateC(value&0x01 == 0x01)
@@ -477,7 +493,7 @@ func (c *CPU) asrb() {
 }
 
 /** Arithmetic Shift Left / Logical Shift Left - H?NxZxVxCx */
-func (c *CPU) asl_(value Word) Word {
+func (c *CPU) asl_(value uint8) uint8 {
 	tmp := value << 1
 	c.testSetZN(tmp)
 	c.updateC(value&0x80 == 0x80)
@@ -501,7 +517,7 @@ func (c *CPU) aslb() {
 }
 
 /** Decrement - NxZxVx */
-func (c *CPU) dec_(value Word) Word {
+func (c *CPU) dec_(value uint8) uint8 {
 	tmp := value - 1
 	c.testSetZN(tmp)
 	c.updateV(value == 0x80)
@@ -524,7 +540,7 @@ func (c *CPU) decb() {
 }
 
 /** Increment - NxZxVx */
-func (c *CPU) inc_(value Word) Word {
+func (c *CPU) inc_(value uint8) uint8 {
 	tmp := value + 1
 	c.testSetZN(tmp)
 	c.updateV(value == 0x7f)
@@ -547,7 +563,7 @@ func (c *CPU) incb() {
 }
 
 /** Test - NxZxV0 */
-func (c *CPU) tst_(value Word) {
+func (c *CPU) tst_(value uint8) {
 	c.testSetZN(value)
 	c.clearV()
 }
@@ -615,7 +631,7 @@ func (c *CPU) bra(address uint16) {
 /** Long Branch to Subroutine */
 func (c *CPU) bsr(address uint16) {
 	c.s -= 2
-	c.writew(c.s, DWord(c.pc))
+	c.writew(c.s, c.pc)
 	c.pc = address
 }
 
@@ -634,7 +650,7 @@ func (c *CPU) daa() {
 		cf |= 0x60
 	}
 	tmp := uint16(c.a) + uint16(cf)
-	c.a = Word(tmp)
+	c.a = uint8(tmp)
 	carry := c.getC()
 	c.testSetZN(c.a)
 	c.updateC(carry || tmp > 0xff)
@@ -701,12 +717,12 @@ func (c *CPU) getRegisterFromCode(code int) uint16 {
 func (c *CPU) setRegisterFromCode(code int, value uint16) {
 	switch code {
 	case 0:
-		c.a = Word(value >> 8)
-		c.b = Word(value)
+		c.a = uint8(value >> 8)
+		c.b = uint8(value)
 	case 1:
-		c.x = DWord(value)
+		c.x = value
 	case 2:
-		c.y = DWord(value)
+		c.y = value
 	case 3:
 		c.u = value
 	case 4:
@@ -714,13 +730,13 @@ func (c *CPU) setRegisterFromCode(code int, value uint16) {
 	case 5:
 		c.pc = value
 	case 8:
-		c.a = Word(value)
+		c.a = uint8(value)
 	case 9:
-		c.b = Word(value)
+		c.b = uint8(value)
 	case 10:
 		c.cc = uint8(value)
 	case 11:
-		c.dp = Word(value)
+		c.dp = uint8(value)
 	default:
 		panic(fmt.Sprintf("Invalid register code: %d", code))
 	}
@@ -853,7 +869,7 @@ func (c *CPU) ble(address uint16) {
 
 /** Load Effective Address into Register X */
 func (c *CPU) leax(address uint16) {
-	c.x = DWord(address)
+	c.x = address
 	if address == 0 {
 		c.setZ()
 	} else {
@@ -863,7 +879,7 @@ func (c *CPU) leax(address uint16) {
 
 /** Load Effective Address into Register Y */
 func (c *CPU) leay(address uint16) {
-	c.y = DWord(address)
+	c.y = address
 	if address == 0 {
 		c.setZ()
 	} else {
@@ -889,19 +905,11 @@ func (c *CPU) pushRegister(value interface{}, stack *uint16) {
 	switch t := value.(type) {
 	case uint8:
 		*stack--
-		c.write(*stack, Word(t))
-		c.clock++
-	case Word:
-		*stack--
-		c.write(*stack, Word(t))
+		c.write(*stack, t)
 		c.clock++
 	case uint16:
 		*stack -= 2
-		c.writew(*stack, DWord(t))
-		c.clock += 2
-	case DWord:
-		*stack -= 2
-		c.writew(*stack, DWord(t))
+		c.writew(*stack, t)
 		c.clock += 2
 	default:
 		// WTF
@@ -914,16 +922,8 @@ func (c *CPU) pullRegister(target interface{}, stack *uint16) {
 		*t = uint8(c.read(*stack))
 		*stack++
 		c.clock++
-	case *Word:
-		*t = Word(c.read(*stack))
-		*stack++
-		c.clock++
 	case *uint16:
 		*t = uint16(c.readw(*stack))
-		*stack += 2
-		c.clock += 2
-	case *DWord:
-		*t = DWord(c.readw(*stack))
 		*stack += 2
 		c.clock += 2
 	default:
@@ -1055,7 +1055,7 @@ func (c *CPU) rts() {
 
 /** Add Accumulator B into Index Register X */
 func (c *CPU) abx() {
-	c.x += DWord(c.b)
+	c.x += uint16(c.b)
 }
 
 /** Return from Interrupt */
@@ -1075,8 +1075,8 @@ func (c *CPU) rti() {
 /** Multiply - ZxCx */
 func (c *CPU) mul() {
 	value := uint16(c.a) * uint16(c.b)
-	c.a = Word(value >> 8)
-	c.b = Word(value & 0xff)
+	c.a = uint8(value >> 8)
+	c.b = uint8(value & 0xff)
 	if c.d() == 0 {
 		c.setZ()
 	} else {
@@ -1099,4 +1099,9 @@ func (c *CPU) swi() {
 	c.setF()
 	c.setI()
 	c.pc = uint16(c.readw(0xfffa))
+}
+
+/** Subtract Memory from Register A - H?NxZxVxCx */
+func (C *CPU) suba(address uint16) {
+
 }

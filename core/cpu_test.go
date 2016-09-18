@@ -6,16 +6,16 @@ import (
 	"github.com/assertgo/assert"
 )
 
-func newCPU() (*CPU, Memory) {
-	var cpu CPU
+func newCPU() *CPU {
+	var cpu = CPU{}
 	ram := NewRam()
 	cpu.Initialize(ram)
-	return &cpu, ram
+	return &cpu
 }
 
 func TestRegisterD(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, _ = newCPU()
+	var cpu = newCPU()
 	cpu.a = 0xe5
 	cpu.b = 0xf0
 	assert.That(cpu.d()).AsInt().IsEqualTo(0xe5f0)
@@ -23,14 +23,14 @@ func TestRegisterD(t *testing.T) {
 
 func TestNegDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x04
-	ram[0x04] = 0x00 // NEG Direct
-	ram[0x05] = 0x0a
-	ram[0x200a] = 0x60
+	cpu.write(0x04, 0x00) // NEG Direct
+	cpu.write(0x05, 0x0a)
+	cpu.write(0x200a, 0x60)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0xa0)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0xa0)
 	assert.ThatBool(cpu.getC()).IsTrue()
 	assert.ThatBool(cpu.getN()).IsTrue()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -39,14 +39,14 @@ func TestNegDirect(t *testing.T) {
 
 func TestNegNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x04
-	ram[0x04] = 0x00 // NEG Direct
-	ram[0x05] = 0x0a
-	ram[0x200a] = 0xa0
+	cpu.write(0x04, 0x00) // NEG Direct
+	cpu.write(0x05, 0x0a)
+	cpu.write(0x200a, 0xa0)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0x60)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x60)
 	assert.ThatBool(cpu.getC()).IsTrue()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -55,14 +55,14 @@ func TestNegNegative(t *testing.T) {
 
 func TestNegZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x04
-	ram[0x04] = 0x00 // NEG Direct
-	ram[0x05] = 0x0a
-	ram[0x200a] = 0x00
+	cpu.write(0x04, 0x00) // NEG Direct
+	cpu.write(0x05, 0x0a)
+	cpu.write(0x200a, 0x00)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0x00)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x00)
 	assert.ThatBool(cpu.getC()).IsFalse()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsTrue()
@@ -71,14 +71,14 @@ func TestNegZero(t *testing.T) {
 
 func TestNegOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x00 // NEG Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x80
+	cpu.write(0x1000, 0x00) // NEG Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x80)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0x80)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x80)
 	assert.ThatBool(cpu.getC()).IsTrue()
 	assert.ThatBool(cpu.getN()).IsTrue()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -87,10 +87,10 @@ func TestNegOverflow(t *testing.T) {
 
 func TestNegA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.a = 0x60
-	ram[0x1000] = 0x40 // NEG A
+	cpu.write(0x1000, 0x40) // NEG A
 	cpu.step()
 	assert.ThatInt(int(cpu.a)).IsEqualTo(0xa0)
 	assert.ThatBool(cpu.getC()).IsTrue()
@@ -101,10 +101,10 @@ func TestNegA(t *testing.T) {
 
 func TestNegB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.b = 0x60
-	ram[0x1000] = 0x50 // COM B
+	cpu.write(0x1000, 0x50) // COM B
 	cpu.step()
 	assert.ThatInt(int(cpu.b)).IsEqualTo(0xa0)
 	assert.ThatBool(cpu.getC()).IsTrue()
@@ -115,14 +115,14 @@ func TestNegB(t *testing.T) {
 
 func TestComDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x04
 	cpu.dp = 0x20
-	ram[0x04] = 0x03 // COM Direct
-	ram[0x05] = 0x0a
-	ram[0x200a] = 0x1a
+	cpu.write(0x04, 0x03) // COM Direct
+	cpu.write(0x05, 0x0a)
+	cpu.write(0x200a, 0x1a)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0xe5)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0xe5)
 	assert.ThatBool(cpu.getC()).IsTrue()
 	assert.ThatBool(cpu.getN()).IsTrue()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -131,14 +131,14 @@ func TestComDirect(t *testing.T) {
 
 func TestComExtended(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x04
-	ram[0x04] = 0x73 // COM Extended
-	ram[0x05] = 0x20
-	ram[0x06] = 0x0a
-	ram[0x200a] = 0x1a
+	cpu.write(0x04, 0x73) // COM Extended
+	cpu.write(0x05, 0x20)
+	cpu.write(0x06, 0x0a)
+	cpu.write(0x200a, 0x1a)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0xe5)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0xe5)
 	assert.ThatBool(cpu.getC()).IsTrue()
 	assert.ThatBool(cpu.getN()).IsTrue()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -147,9 +147,9 @@ func TestComExtended(t *testing.T) {
 
 func TestComA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x43 // COM A
+	cpu.write(0x1000, 0x43) // COM A
 	cpu.a = 0x1a
 	cpu.step()
 	assert.ThatInt(int(cpu.a)).IsEqualTo(0xe5)
@@ -161,9 +161,9 @@ func TestComA(t *testing.T) {
 
 func TestComB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x53 // COM B
+	cpu.write(0x1000, 0x53) // COM B
 	cpu.b = 0x1a
 	cpu.step()
 	assert.ThatInt(int(cpu.b)).IsEqualTo(0xe5)
@@ -175,14 +175,14 @@ func TestComB(t *testing.T) {
 
 func TestLSRDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x04 // LSR Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x66
+	cpu.write(0x1000, 0x04) // LSR Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x66)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0x33)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x33)
 	assert.ThatBool(cpu.getC()).IsFalse()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -190,14 +190,14 @@ func TestLSRDirect(t *testing.T) {
 
 func TestLSRExtended(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x74 // LSR Direct
-	ram[0x1001] = 0x20
-	ram[0x1002] = 0x0a
-	ram[0x200a] = 0x08
+	cpu.write(0x1000, 0x74) // LSR Direct
+	cpu.write(0x1001, 0x20)
+	cpu.write(0x1002, 0x0a)
+	cpu.write(0x200a, 0x08)
 	cpu.step()
-	assert.ThatInt(int(ram[0x200a])).IsEqualTo(0x04)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x04)
 	assert.ThatBool(cpu.getC()).IsFalse()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -205,9 +205,9 @@ func TestLSRExtended(t *testing.T) {
 
 func TestLSRA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x44 // LSRA
+	cpu.write(0x1000, 0x44) // LSRA
 	cpu.a = 0x56
 	cpu.step()
 	assert.ThatInt(int(cpu.a)).IsEqualTo(0x2b)
@@ -218,9 +218,9 @@ func TestLSRA(t *testing.T) {
 
 func TestLSRB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x54 // LSRB
+	cpu.write(0x1000, 0x54) // LSRB
 	cpu.b = 0x56
 	cpu.step()
 	assert.ThatInt(int(cpu.b)).IsEqualTo(0x2b)
@@ -231,9 +231,9 @@ func TestLSRB(t *testing.T) {
 
 func TestLSRZeroAndCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x44 // LSRA
+	cpu.write(0x1000, 0x44) // LSRA
 	cpu.a = 0x01
 	cpu.step()
 	assert.ThatInt(int(cpu.a)).IsEqualTo(0x00)
@@ -244,14 +244,14 @@ func TestLSRZeroAndCarry(t *testing.T) {
 
 func TestRORDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x06 // ROR Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x22
+	cpu.write(0x1000, 0x06) // ROR Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x22)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x11)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x11)
 	assert.ThatBool(cpu.getC()).IsFalse()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -261,14 +261,14 @@ func TestRORDirect(t *testing.T) {
 
 func TestRORCarryAndNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x06 // ROR Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x23
+	cpu.write(0x1000, 0x06) // ROR Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x23)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x91)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x91)
 	assert.ThatBool(cpu.getC()).IsTrue()
 	assert.ThatBool(cpu.getN()).IsTrue()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -277,9 +277,9 @@ func TestRORCarryAndNegative(t *testing.T) {
 
 func TestRORZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x46 // ROR A
+	cpu.write(0x1000, 0x46) // ROR A
 	cpu.a = 0
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0)
@@ -291,9 +291,9 @@ func TestRORZero(t *testing.T) {
 
 func TestRORA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x46 // ROR A
+	cpu.write(0x1000, 0x46) // ROR A
 	cpu.a = 0x22
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x11)
@@ -306,9 +306,9 @@ func TestRORA(t *testing.T) {
 
 func TestRORB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x56 // ROR B
+	cpu.write(0x1000, 0x56) // ROR B
 	cpu.b = 0x22
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x11)
@@ -321,14 +321,14 @@ func TestRORB(t *testing.T) {
 
 func TestROLDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x09 // ROL Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x1a
+	cpu.write(0x1000, 0x09) // ROL Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x1a)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x34)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x34)
 	assert.ThatBool(cpu.getC()).IsFalse()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -339,9 +339,9 @@ func TestROLDirect(t *testing.T) {
 
 func TestROLA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x49 // ROLA
+	cpu.write(0x1000, 0x49) // ROLA
 	cpu.a = 0x1a
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x34)
@@ -355,9 +355,9 @@ func TestROLA(t *testing.T) {
 
 func TestROLB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x59 // ROLB
+	cpu.write(0x1000, 0x59) // ROLB
 	cpu.b = 0x1a
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x34)
@@ -371,9 +371,9 @@ func TestROLB(t *testing.T) {
 
 func TestROLZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x49 // ROLA
+	cpu.write(0x1000, 0x49) // ROLA
 	cpu.a = 0x00
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -387,9 +387,9 @@ func TestROLZero(t *testing.T) {
 
 func TestROLCarryAndOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x49 // ROLA
+	cpu.write(0x1000, 0x49) // ROLA
 	cpu.a = 0x81
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x03)
@@ -403,9 +403,9 @@ func TestROLCarryAndOverflow(t *testing.T) {
 
 func TestROLNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x49 // ROLA
+	cpu.write(0x1000, 0x49) // ROLA
 	cpu.a = 0x40
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x80)
@@ -419,14 +419,14 @@ func TestROLNegative(t *testing.T) {
 
 func TestASRDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x07 // ASR Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x02
+	cpu.write(0x1000, 0x07) // ASR Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x02)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x01)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x01)
 	assert.ThatBool(cpu.getC()).IsFalse()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -436,9 +436,9 @@ func TestASRDirect(t *testing.T) {
 
 func TestASRA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x47 // ASRA
+	cpu.write(0x1000, 0x47) // ASRA
 	cpu.a = 0x02
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x01)
@@ -451,9 +451,9 @@ func TestASRA(t *testing.T) {
 
 func TestASRB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x57 // ASRB
+	cpu.write(0x1000, 0x57) // ASRB
 	cpu.b = 0x02
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x01)
@@ -466,9 +466,9 @@ func TestASRB(t *testing.T) {
 
 func TestASRCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x47 // ASRA
+	cpu.write(0x1000, 0x47) // ASRA
 	cpu.a = 0x03
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x01)
@@ -481,9 +481,9 @@ func TestASRCarry(t *testing.T) {
 
 func TestASRZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x47 // ASRA
+	cpu.write(0x1000, 0x47) // ASRA
 	cpu.a = 0x00
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -496,9 +496,9 @@ func TestASRZero(t *testing.T) {
 
 func TestASRNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x47 // ASRA
+	cpu.write(0x1000, 0x47) // ASRA
 	cpu.a = 0x82
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0xc1)
@@ -511,14 +511,14 @@ func TestASRNegative(t *testing.T) {
 
 func TestASLDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x08 // ASL Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x1a
+	cpu.write(0x1000, 0x08) // ASL Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x1a)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x34)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x34)
 	assert.ThatBool(cpu.getC()).IsFalse()
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
@@ -529,9 +529,9 @@ func TestASLDirect(t *testing.T) {
 
 func TestASLA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x48 // ASLA
+	cpu.write(0x1000, 0x48) // ASLA
 	cpu.a = 0x1a
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x34)
@@ -545,9 +545,9 @@ func TestASLA(t *testing.T) {
 
 func TestASLB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x58 // ASLB
+	cpu.write(0x1000, 0x58) // ASLB
 	cpu.b = 0x1a
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x34)
@@ -561,9 +561,9 @@ func TestASLB(t *testing.T) {
 
 func TestASLZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x48 // ASLA
+	cpu.write(0x1000, 0x48) // ASLA
 	cpu.a = 0x00
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -577,9 +577,9 @@ func TestASLZero(t *testing.T) {
 
 func TestASLNegativeAndOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x48 // ASLA
+	cpu.write(0x1000, 0x48) // ASLA
 	cpu.a = 0x42
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x84)
@@ -593,9 +593,9 @@ func TestASLNegativeAndOverflow(t *testing.T) {
 
 func TestASLCarryAndOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x48 // ASLA
+	cpu.write(0x1000, 0x48) // ASLA
 	cpu.a = 0x81
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x02)
@@ -609,14 +609,14 @@ func TestASLCarryAndOverflow(t *testing.T) {
 
 func TestDECDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x0a // DEC Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x2b
+	cpu.write(0x1000, 0x0a) // DEC Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x2b)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x2a)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x2a)
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
 	assert.ThatBool(cpu.getV()).IsFalse()
@@ -626,9 +626,9 @@ func TestDECDirect(t *testing.T) {
 
 func TestDECA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4a // DECA
+	cpu.write(0x1000, 0x4a) // DECA
 	cpu.a = 0x2b
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x2a)
@@ -641,9 +641,9 @@ func TestDECA(t *testing.T) {
 
 func TestDECB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x5a // DECB
+	cpu.write(0x1000, 0x5a) // DECB
 	cpu.b = 0x2b
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x2a)
@@ -656,9 +656,9 @@ func TestDECB(t *testing.T) {
 
 func TestDECZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4a // DECA
+	cpu.write(0x1000, 0x4a) // DECA
 	cpu.a = 0x01
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -671,9 +671,9 @@ func TestDECZero(t *testing.T) {
 
 func TestDECNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4a // DECA
+	cpu.write(0x1000, 0x4a) // DECA
 	cpu.a = 0x00
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0xff)
@@ -686,9 +686,9 @@ func TestDECNegative(t *testing.T) {
 
 func TestDECOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4a // DECA
+	cpu.write(0x1000, 0x4a) // DECA
 	cpu.a = 0x80
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x7f)
@@ -701,14 +701,14 @@ func TestDECOverflow(t *testing.T) {
 
 func TestINCDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x0c // DEC Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x2b
+	cpu.write(0x1000, 0x0c) // DEC Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x2b)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x2c)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x2c)
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
 	assert.ThatBool(cpu.getV()).IsFalse()
@@ -718,9 +718,9 @@ func TestINCDirect(t *testing.T) {
 
 func TestINCA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4c // DEC Direct
+	cpu.write(0x1000, 0x4c) // DEC Direct
 	cpu.a = 0x2b
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x2c)
@@ -733,9 +733,9 @@ func TestINCA(t *testing.T) {
 
 func TestINCB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x5c // DEC Direct
+	cpu.write(0x1000, 0x5c) // DEC Direct
 	cpu.b = 0x2b
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x2c)
@@ -748,9 +748,9 @@ func TestINCB(t *testing.T) {
 
 func TestINCZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4c // DEC Direct
+	cpu.write(0x1000, 0x4c) // DEC Direct
 	cpu.a = 0xff
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -763,9 +763,9 @@ func TestINCZero(t *testing.T) {
 
 func TestINCNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4c // DEC Direct
+	cpu.write(0x1000, 0x4c) // DEC Direct
 	cpu.a = 0xfb
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0xfc)
@@ -778,9 +778,9 @@ func TestINCNegative(t *testing.T) {
 
 func TestINCOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4c // DEC Direct
+	cpu.write(0x1000, 0x4c) // DEC Direct
 	cpu.a = 0x7f
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x80)
@@ -793,14 +793,14 @@ func TestINCOverflow(t *testing.T) {
 
 func TestTSTDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x0d // TST Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x32
+	cpu.write(0x1000, 0x0d) // TST Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x32)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x32)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x32)
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsFalse()
 	assert.ThatBool(cpu.getV()).IsFalse()
@@ -810,9 +810,9 @@ func TestTSTDirect(t *testing.T) {
 
 func TestTSTA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4d // TSTA
+	cpu.write(0x1000, 0x4d) // TSTA
 	cpu.a = 0x32
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x32)
@@ -825,9 +825,9 @@ func TestTSTA(t *testing.T) {
 
 func TestTSTB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x5d // TSTA
+	cpu.write(0x1000, 0x5d) // TSTA
 	cpu.b = 0x32
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x32)
@@ -840,9 +840,9 @@ func TestTSTB(t *testing.T) {
 
 func TestTSTNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4d // TSTA
+	cpu.write(0x1000, 0x4d) // TSTA
 	cpu.a = 0xd8
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0xd8)
@@ -855,9 +855,9 @@ func TestTSTNegative(t *testing.T) {
 
 func TestTSTZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4d // TSTA
+	cpu.write(0x1000, 0x4d) // TSTA
 	cpu.a = 0x00
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -870,11 +870,11 @@ func TestTSTZero(t *testing.T) {
 
 func TestJMPDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x0e // JMP Direct
-	ram[0x1001] = 0x0a
+	cpu.write(0x1000, 0x0e) // JMP Direct
+	cpu.write(0x1001, 0x0a)
 	cpu.step()
 	assert.That(cpu.pc).AsInt().IsEqualTo(0x200a)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(3)
@@ -882,14 +882,14 @@ func TestJMPDirect(t *testing.T) {
 
 func TestCLRDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
-	ram[0x1000] = 0x0f // CLR Direct
-	ram[0x1001] = 0x0a
-	ram[0x200a] = 0x4d
+	cpu.write(0x1000, 0x0f) // CLR Direct
+	cpu.write(0x1001, 0x0a)
+	cpu.write(0x200a, 0x4d)
 	cpu.step()
-	assert.That(ram[0x200a]).AsInt().IsEqualTo(0x00)
+	assert.That(cpu.read(0x200a)).AsInt().IsEqualTo(0x00)
 	assert.ThatBool(cpu.getN()).IsFalse()
 	assert.ThatBool(cpu.getZ()).IsTrue()
 	assert.ThatBool(cpu.getV()).IsFalse()
@@ -900,9 +900,9 @@ func TestCLRDirect(t *testing.T) {
 
 func TestCLRA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x4f // CLRA
+	cpu.write(0x1000, 0x4f) // CLRA
 	cpu.a = 0x4d
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -916,9 +916,9 @@ func TestCLRA(t *testing.T) {
 
 func TestCLRB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x5f // CLRB
+	cpu.write(0x1000, 0x5f) // CLRB
 	cpu.b = 0x4d
 	cpu.step()
 	assert.That(cpu.b).AsInt().IsEqualTo(0x00)
@@ -932,10 +932,10 @@ func TestCLRB(t *testing.T) {
 
 func TestBRAPositive(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x20 // BRA
-	ram[0x1001] = 0x10
+	cpu.write(0x1000, 0x20) // BRA
+	cpu.write(0x1001, 0x10)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1012)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(3)
@@ -943,11 +943,10 @@ func TestBRAPositive(t *testing.T) {
 
 func TestLBRAPositive(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x16 // LBRA
-	ram[0x1001] = 0x10
-	ram[0x1002] = 0x00
+	cpu.write(0x1000, 0x16) // LBRA
+	cpu.writew(0x1001, 0x1000)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x2003)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(5)
@@ -955,10 +954,10 @@ func TestLBRAPositive(t *testing.T) {
 
 func TestBRANegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x20 // LBRA
-	ram[0x1001] = 0xfe
+	cpu.write(0x1000, 0x20) // LBRA
+	cpu.write(0x1001, 0xfe)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1000)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(3)
@@ -966,11 +965,10 @@ func TestBRANegative(t *testing.T) {
 
 func TestLBRANegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x16 // LBRA
-	ram[0x1001] = 0xff
-	ram[0x1002] = 0x00
+	cpu.write(0x1000, 0x16) // LBRA
+	cpu.writew(0x1001, 0xff00)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x0f03)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(5)
@@ -978,12 +976,11 @@ func TestLBRANegative(t *testing.T) {
 
 func TestLBSR(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.s = 0x400
-	ram[0x1000] = 0x17 // LBSR
-	ram[0x1001] = 0x01
-	ram[0x1002] = 0x80
+	cpu.write(0x1000, 0x17) // LBSR
+	cpu.writew(0x1001, 0x0180)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1183)
 	assert.ThatInt(int(cpu.s)).IsEqualTo(0x3fe)
@@ -993,9 +990,9 @@ func TestLBSR(t *testing.T) {
 
 func TestDAA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x19 // DAA
+	cpu.write(0x1000, 0x19) // DAA
 	cpu.a = 0x62
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x62)
@@ -1008,9 +1005,9 @@ func TestDAA(t *testing.T) {
 
 func TestDAALsb(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x19 // DAA
+	cpu.write(0x1000, 0x19) // DAA
 	cpu.a = 0x4a
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x50)
@@ -1023,9 +1020,9 @@ func TestDAALsb(t *testing.T) {
 
 func TestDAALsbWithHalfCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x19 // DAA
+	cpu.write(0x1000, 0x19) // DAA
 	cpu.a = 0x22
 	cpu.setH()
 	cpu.step()
@@ -1039,9 +1036,9 @@ func TestDAALsbWithHalfCarry(t *testing.T) {
 
 func TestDAAMsb(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x19 // DAA
+	cpu.write(0x1000, 0x19) // DAA
 	cpu.a = 0xb7
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x17)
@@ -1054,9 +1051,9 @@ func TestDAAMsb(t *testing.T) {
 
 func TestDAAMsbWithCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x19 // DAA
+	cpu.write(0x1000, 0x19) // DAA
 	cpu.a = 0x19
 	cpu.setC()
 	cpu.step()
@@ -1070,9 +1067,9 @@ func TestDAAMsbWithCarry(t *testing.T) {
 
 func TestDAALsbAndMsb(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x19 // DAA
+	cpu.write(0x1000, 0x19) // DAA
 	cpu.a = 0x9a
 	cpu.setC()
 	cpu.step()
@@ -1086,11 +1083,11 @@ func TestDAALsbAndMsb(t *testing.T) {
 
 func TestORCC(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.cc = carry | negative
-	ram[0x1000] = 0x1a // ORCC
-	ram[0x1001] = 0x82
+	cpu.write(0x1000, 0x1a) // ORCC
+	cpu.write(0x1001, 0x82)
 	cpu.step()
 	assert.That(cpu.cc).AsInt().IsEqualTo(0x8b)
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
@@ -1099,11 +1096,11 @@ func TestORCC(t *testing.T) {
 
 func TestANDCC(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.cc = carry | negative
-	ram[0x1000] = 0x1c // ANDCC
-	ram[0x1001] = 0xfe
+	cpu.write(0x1000, 0x1c) // ANDCC
+	cpu.write(0x1001, 0xfe)
 	cpu.step()
 	assert.That(cpu.cc).AsInt().IsEqualTo(0x08)
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
@@ -1112,9 +1109,9 @@ func TestANDCC(t *testing.T) {
 
 func TestSEX(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1d // SEX
+	cpu.write(0x1000, 0x1d) // SEX
 	cpu.b = 0x16
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -1127,9 +1124,9 @@ func TestSEX(t *testing.T) {
 
 func TestSEXNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1d // SEX
+	cpu.write(0x1000, 0x1d) // SEX
 	cpu.b = 0xa5
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0xff)
@@ -1142,9 +1139,9 @@ func TestSEXNegative(t *testing.T) {
 
 func TestSEXZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1d // SEX
+	cpu.write(0x1000, 0x1d) // SEX
 	cpu.b = 0x00
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x00)
@@ -1157,10 +1154,10 @@ func TestSEXZero(t *testing.T) {
 
 func TestEXGAB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1e // EXG
-	ram[0x1001] = 0x89
+	cpu.write(0x1000, 0x1e) // EXG
+	cpu.write(0x1001, 0x89)
 	cpu.a = 0x27
 	cpu.b = 0x0b
 	cpu.step()
@@ -1172,10 +1169,10 @@ func TestEXGAB(t *testing.T) {
 
 func TestEXGXY(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1e // EXG
-	ram[0x1001] = 0x12
+	cpu.write(0x1000, 0x1e) // EXG
+	cpu.write(0x1001, 0x12)
 	cpu.x = 0x1f00
 	cpu.y = 0x4000
 	cpu.step()
@@ -1187,10 +1184,10 @@ func TestEXGXY(t *testing.T) {
 
 func TestEXGInvalidRegisterCombination(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1e // EXG
-	ram[0x1001] = 0x85
+	cpu.write(0x1000, 0x1e) // EXG
+	cpu.write(0x1001, 0x85)
 	defer func() {
 		r := recover()
 		assert.That(r).AsString().Contains("Try to exchange 8-bit with 16-bits registers")
@@ -1200,10 +1197,10 @@ func TestEXGInvalidRegisterCombination(t *testing.T) {
 
 func TestEXGInvalidCode(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1e // EXG
-	ram[0x1001] = 0x67
+	cpu.write(0x1000, 0x1e) // EXG
+	cpu.write(0x1001, 0x67)
 	defer func() {
 		r := recover()
 		assert.That(r).AsString().Contains("Invalid register code")
@@ -1213,10 +1210,10 @@ func TestEXGInvalidCode(t *testing.T) {
 
 func TestTFRAtoB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1f // TFR
-	ram[0x1001] = 0x89
+	cpu.write(0x1000, 0x1f) // TFR
+	cpu.write(0x1001, 0x89)
 	cpu.a = 0x27
 	cpu.step()
 	assert.That(cpu.a).AsInt().IsEqualTo(0x27)
@@ -1227,10 +1224,10 @@ func TestTFRAtoB(t *testing.T) {
 
 func TestTFRPCtoX(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1f // TFR
-	ram[0x1001] = 0x51
+	cpu.write(0x1000, 0x1f) // TFR
+	cpu.write(0x1001, 0x51)
 	cpu.step()
 	assert.That(cpu.x).AsInt().IsEqualTo(0x1002)
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
@@ -1239,10 +1236,10 @@ func TestTFRPCtoX(t *testing.T) {
 
 func TestTFRInvalidRegisterCombination(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1f // TFR
-	ram[0x1001] = 0x85
+	cpu.write(0x1000, 0x1f) // TFR
+	cpu.write(0x1001, 0x85)
 	defer func() {
 		r := recover()
 		assert.That(r).AsString().Contains("Try to transfer 8-bit and 16-bits registers")
@@ -1252,10 +1249,10 @@ func TestTFRInvalidRegisterCombination(t *testing.T) {
 
 func TestTFRInvalidRegisterCode(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x1f // TFR
-	ram[0x1001] = 0x8f
+	cpu.write(0x1000, 0x1f) // TFR
+	cpu.write(0x1001, 0x8f)
 	defer func() {
 		r := recover()
 		assert.That(r).AsString().Contains("Invalid register code")
@@ -1263,12 +1260,12 @@ func TestTFRInvalidRegisterCode(t *testing.T) {
 	cpu.step()
 }
 
-func branchingOpcodeTest(t *testing.T, opcode Word, flags []uint8, branch bool) {
+func branchingOpcodeTest(t *testing.T, opcode uint8, flags []uint8, branch bool) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = opcode
-	ram[0x1001] = 0x10
+	cpu.write(0x1000, opcode)
+	cpu.write(0x1001, 0x10)
 	for _, flag := range flags {
 		cpu.cc |= flag
 	}
@@ -1481,8 +1478,8 @@ func TestLEAX(t *testing.T) {
 	cpu.pc = 0x1000
 	cpu.y = 0xd000
 	cpu.a = 0x5a
-	ram[0x1000] = 0x30 // LEAX
-	ram[0x1001] = 0xa6 // EA = Y + ACCA
+	cpu.write(0x1000, 0x30) // LEAX
+	cpu.write(0x1001, 0xa6) // EA = Y + ACCA
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
 	assert.That(cpu.x).AsInt().IsEqualTo(0xd05a)
@@ -1491,14 +1488,14 @@ func TestLEAX(t *testing.T) {
 
 func TestLEAXZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.y = 0x100
 	cpu.a = 0xff
 	cpu.b = 0x00 // D = 0xff00
 	cpu.x = 0x0100
-	ram[0x1000] = 0x30 // LEAX
-	ram[0x1001] = 0xab // EA = Y + ACCD
+	cpu.write(0x1000, 0x30) // LEAX
+	cpu.write(0x1001, 0xab) // EA = Y + ACCD
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
 	assert.That(cpu.x).AsInt().IsEqualTo(0)
@@ -1508,11 +1505,11 @@ func TestLEAXZero(t *testing.T) {
 
 func TestLEAY(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
-	ram[0x1000] = 0x31 // LEAY
-	ram[0x1001] = 0x8c // EA = PC + 8 bits offset
-	ram[0x1002] = 0x0a
+	cpu.write(0x1000, 0x31) // LEAY
+	cpu.write(0x1001, 0x8c) // EA = PC + 8 bits offset
+	cpu.write(0x1002, 0x0a)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1003)
 	assert.That(cpu.y).AsInt().IsEqualTo(0x100d)
@@ -1521,12 +1518,12 @@ func TestLEAY(t *testing.T) {
 
 func TestLEAYZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.y = 0x0100
 	cpu.u = 0
-	ram[0x1000] = 0x31 // LEAY
-	ram[0x1001] = 0xc4 // EA = U
+	cpu.write(0x1000, 0x31) // LEAY
+	cpu.write(0x1001, 0xc4) // EA = U
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
 	assert.That(cpu.y).AsInt().IsEqualTo(0)
@@ -1536,13 +1533,12 @@ func TestLEAYZero(t *testing.T) {
 
 func TestLEAS(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.x = 0x800
-	ram[0x1000] = 0x32 // LEAS
-	ram[0x1001] = 0x94 // EA = [X]
-	ram[0x800] = 0x1f
-	ram[0x801] = 0x40
+	cpu.write(0x1000, 0x32) // LEAS
+	cpu.write(0x1001, 0x94) // EA = [X]
+	cpu.writew(0x800, 0x1f40)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
 	assert.That(cpu.s).AsInt().IsEqualTo(0x1f40)
@@ -1551,13 +1547,12 @@ func TestLEAS(t *testing.T) {
 
 func TestLEAU(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.y = 0x2000
-	ram[0x1000] = 0x33 // LEAU
-	ram[0x1001] = 0xb1 // EA = [Y++]
-	ram[0x2000] = 0x1f
-	ram[0x2001] = 0x40
+	cpu.write(0x1000, 0x33) // LEAU
+	cpu.write(0x1001, 0xb1) // EA = [Y++]
+	cpu.writew(0x2000, 0x1f40)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
 	assert.That(cpu.u).AsInt().IsEqualTo(0x1f40)
@@ -1567,7 +1562,7 @@ func TestLEAU(t *testing.T) {
 
 func TestPSHS(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.u = 0x7fff
 	cpu.y = 0xa200
@@ -1577,8 +1572,8 @@ func TestPSHS(t *testing.T) {
 	cpu.a = 0x05
 	cpu.cc = 0x03
 	cpu.s = 0xd000
-	ram[0x1000] = 0x34 // PSHS
-	ram[0x1001] = 0xff // Push All
+	cpu.write(0x1000, 0x34) // PSHS
+	cpu.write(0x1001, 0xff) // Push All
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
 	assert.ThatInt(int(cpu.readw(0xcffe))).IsEqualTo(0x1002)
@@ -1593,11 +1588,11 @@ func TestPSHS(t *testing.T) {
 
 func TestPULS(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.s = 0xcff4
-	ram[0x1000] = 0x35 // PULS
-	ram[0x1001] = 0xff // All registers
+	cpu.write(0x1000, 0x35) // PULS
+	cpu.write(0x1001, 0xff) // All registers
 	cpu.writew(0xcffe, 0x2000)
 	cpu.writew(0xcffc, 0x7fff)
 	cpu.writew(0xcffa, 0xa200)
@@ -1621,7 +1616,7 @@ func TestPULS(t *testing.T) {
 
 func TestPSHU(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.s = 0x7fff
 	cpu.y = 0xa200
@@ -1631,8 +1626,8 @@ func TestPSHU(t *testing.T) {
 	cpu.a = 0x05
 	cpu.cc = 0x03
 	cpu.u = 0xd000
-	ram[0x1000] = 0x36 // PSHU
-	ram[0x1001] = 0xff // Push All
+	cpu.write(0x1000, 0x36) // PSHU
+	cpu.write(0x1001, 0xff) // Push All
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
 	assert.ThatInt(int(cpu.readw(0xcffe))).IsEqualTo(0x1002)
@@ -1647,11 +1642,11 @@ func TestPSHU(t *testing.T) {
 
 func TestPULU(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.u = 0xcff4
-	ram[0x1000] = 0x37 // PULU
-	ram[0x1001] = 0xff // All registers
+	cpu.write(0x1000, 0x37) // PULU
+	cpu.write(0x1001, 0xff) // All registers
 	cpu.writew(0xcffe, 0x2000)
 	cpu.writew(0xcffc, 0x7fff)
 	cpu.writew(0xcffa, 0xa200)
@@ -1675,10 +1670,10 @@ func TestPULU(t *testing.T) {
 
 func TestRTS(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.s = 0xcffe
-	ram[0x1000] = 0x39 // RTS
+	cpu.write(0x1000, 0x39) // RTS
 	cpu.writew(cpu.s, 0x3000)
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x3000)
@@ -1688,11 +1683,11 @@ func TestRTS(t *testing.T) {
 
 func TestABX(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.x = 0x2f00
 	cpu.b = 0x50
-	ram[0x1000] = 0x3a // ABX
+	cpu.write(0x1000, 0x3a) // ABX
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
 	assert.ThatInt(int(cpu.x)).IsEqualTo(0x2f50)
@@ -1702,10 +1697,10 @@ func TestABX(t *testing.T) {
 
 func TestRTIPartial(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.s = 0xbffd
-	ram[0x1000] = 0x3b // RTI
+	cpu.write(0x1000, 0x3b) // RTI
 	cpu.write(0xbffd, 0x05)
 	cpu.writew(0xbffe, 0x2000)
 	cpu.step()
@@ -1717,10 +1712,10 @@ func TestRTIPartial(t *testing.T) {
 
 func TestRTIEntire(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.s = 0xbff4
-	ram[0x1000] = 0x3b // RTI
+	cpu.write(0x1000, 0x3b) // RTI
 	cpu.writew(0xbffe, 0x2000)
 	cpu.writew(0xbffc, 0x7fff)
 	cpu.writew(0xbffa, 0xa200)
@@ -1745,11 +1740,11 @@ func TestRTIEntire(t *testing.T) {
 
 func TestMUL(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.a = 0x25
 	cpu.b = 0xd0
-	ram[0x1000] = 0x3d // MUL
+	cpu.write(0x1000, 0x3d) // MUL
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
 	assert.ThatInt(int(cpu.d())).IsEqualTo(0x1e10)
@@ -1760,11 +1755,11 @@ func TestMUL(t *testing.T) {
 
 func TestMULCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.a = 0x65
 	cpu.b = 0xdf
-	ram[0x1000] = 0x3d // MUL
+	cpu.write(0x1000, 0x3d) // MUL
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
 	assert.ThatInt(int(cpu.d())).IsEqualTo(0x57fb)
@@ -1775,11 +1770,11 @@ func TestMULCarry(t *testing.T) {
 
 func TestMULZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.a = 0x65
 	cpu.b = 0x00
-	ram[0x1000] = 0x3d // MUL
+	cpu.write(0x1000, 0x3d) // MUL
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
 	assert.ThatInt(int(cpu.d())).IsEqualTo(0)
@@ -1790,7 +1785,7 @@ func TestMULZero(t *testing.T) {
 
 func TestSWI(t *testing.T) {
 	assert := assert.New(t)
-	var cpu, ram = newCPU()
+	var cpu = newCPU()
 	cpu.pc = 0x1000
 	cpu.u = 0x7fff
 	cpu.y = 0xa200
@@ -1800,7 +1795,7 @@ func TestSWI(t *testing.T) {
 	cpu.a = 0x05
 	cpu.cc = 0x03
 	cpu.s = 0xd000
-	ram[0x1000] = 0x3f         // SWI
+	cpu.write(0x1000, 0x3f)    // SWI
 	cpu.writew(0xfffa, 0xe000) // Interupt Vector Address
 	cpu.step()
 	assert.ThatInt(int(cpu.pc)).IsEqualTo(0xe000)

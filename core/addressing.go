@@ -75,9 +75,9 @@ func (c *CPU) writeIndexedRegister(postbyte uint8, value uint16) {
 	code := (postbyte & 0x60) >> 5
 	switch code {
 	case 0:
-		c.x = DWord(value)
+		c.x = value
 	case 1:
-		c.y = DWord(value)
+		c.y = value
 	case 2:
 		c.u = value
 	case 3:
