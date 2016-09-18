@@ -6,11 +6,16 @@ import (
 	"github.com/assertgo/assert"
 )
 
-func TestRegisterD(t *testing.T) {
-	assert := assert.New(t)
+func newCPU() (*CPU, Memory) {
 	var cpu CPU
 	ram := NewRam()
 	cpu.Initialize(ram)
+	return &cpu, ram
+}
+
+func TestRegisterD(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, _ = newCPU()
 	cpu.a = 0xe5
 	cpu.b = 0xf0
 	assert.That(cpu.d()).AsInt().IsEqualTo(0xe5f0)
@@ -18,9 +23,7 @@ func TestRegisterD(t *testing.T) {
 
 func TestNegDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x04
 	ram[0x04] = 0x00 // NEG Direct
@@ -36,9 +39,7 @@ func TestNegDirect(t *testing.T) {
 
 func TestNegNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x04
 	ram[0x04] = 0x00 // NEG Direct
@@ -54,9 +55,7 @@ func TestNegNegative(t *testing.T) {
 
 func TestNegZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x04
 	ram[0x04] = 0x00 // NEG Direct
@@ -72,9 +71,7 @@ func TestNegZero(t *testing.T) {
 
 func TestNegOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.dp = 0x20
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x00 // NEG Direct
@@ -90,9 +87,7 @@ func TestNegOverflow(t *testing.T) {
 
 func TestNegA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.a = 0x60
 	ram[0x1000] = 0x40 // NEG A
@@ -106,9 +101,7 @@ func TestNegA(t *testing.T) {
 
 func TestNegB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.b = 0x60
 	ram[0x1000] = 0x50 // COM B
@@ -122,9 +115,7 @@ func TestNegB(t *testing.T) {
 
 func TestComDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x04
 	cpu.dp = 0x20
 	ram[0x04] = 0x03 // COM Direct
@@ -140,9 +131,7 @@ func TestComDirect(t *testing.T) {
 
 func TestComExtended(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x04
 	ram[0x04] = 0x73 // COM Extended
 	ram[0x05] = 0x20
@@ -158,9 +147,7 @@ func TestComExtended(t *testing.T) {
 
 func TestComA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x43 // COM A
 	cpu.a = 0x1a
@@ -174,9 +161,7 @@ func TestComA(t *testing.T) {
 
 func TestComB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x53 // COM B
 	cpu.b = 0x1a
@@ -190,9 +175,7 @@ func TestComB(t *testing.T) {
 
 func TestLSRDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x04 // LSR Direct
@@ -207,9 +190,7 @@ func TestLSRDirect(t *testing.T) {
 
 func TestLSRExtended(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x74 // LSR Direct
 	ram[0x1001] = 0x20
@@ -224,9 +205,7 @@ func TestLSRExtended(t *testing.T) {
 
 func TestLSRA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x44 // LSRA
 	cpu.a = 0x56
@@ -239,9 +218,7 @@ func TestLSRA(t *testing.T) {
 
 func TestLSRB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x54 // LSRB
 	cpu.b = 0x56
@@ -254,9 +231,7 @@ func TestLSRB(t *testing.T) {
 
 func TestLSRZeroAndCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x44 // LSRA
 	cpu.a = 0x01
@@ -269,9 +244,7 @@ func TestLSRZeroAndCarry(t *testing.T) {
 
 func TestRORDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x06 // ROR Direct
@@ -288,9 +261,7 @@ func TestRORDirect(t *testing.T) {
 
 func TestRORCarryAndNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x06 // ROR Direct
@@ -306,9 +277,7 @@ func TestRORCarryAndNegative(t *testing.T) {
 
 func TestRORZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x46 // ROR A
 	cpu.a = 0
@@ -322,9 +291,7 @@ func TestRORZero(t *testing.T) {
 
 func TestRORA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x46 // ROR A
 	cpu.a = 0x22
@@ -339,9 +306,7 @@ func TestRORA(t *testing.T) {
 
 func TestRORB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x56 // ROR B
 	cpu.b = 0x22
@@ -356,9 +321,7 @@ func TestRORB(t *testing.T) {
 
 func TestROLDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x09 // ROL Direct
@@ -376,9 +339,7 @@ func TestROLDirect(t *testing.T) {
 
 func TestROLA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x49 // ROLA
 	cpu.a = 0x1a
@@ -394,9 +355,7 @@ func TestROLA(t *testing.T) {
 
 func TestROLB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x59 // ROLB
 	cpu.b = 0x1a
@@ -412,9 +371,7 @@ func TestROLB(t *testing.T) {
 
 func TestROLZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x49 // ROLA
 	cpu.a = 0x00
@@ -430,9 +387,7 @@ func TestROLZero(t *testing.T) {
 
 func TestROLCarryAndOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x49 // ROLA
 	cpu.a = 0x81
@@ -448,9 +403,7 @@ func TestROLCarryAndOverflow(t *testing.T) {
 
 func TestROLNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x49 // ROLA
 	cpu.a = 0x40
@@ -466,9 +419,7 @@ func TestROLNegative(t *testing.T) {
 
 func TestASRDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x07 // ASR Direct
@@ -485,9 +436,7 @@ func TestASRDirect(t *testing.T) {
 
 func TestASRA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x47 // ASRA
 	cpu.a = 0x02
@@ -502,9 +451,7 @@ func TestASRA(t *testing.T) {
 
 func TestASRB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x57 // ASRB
 	cpu.b = 0x02
@@ -519,9 +466,7 @@ func TestASRB(t *testing.T) {
 
 func TestASRCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x47 // ASRA
 	cpu.a = 0x03
@@ -536,9 +481,7 @@ func TestASRCarry(t *testing.T) {
 
 func TestASRZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x47 // ASRA
 	cpu.a = 0x00
@@ -553,9 +496,7 @@ func TestASRZero(t *testing.T) {
 
 func TestASRNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x47 // ASRA
 	cpu.a = 0x82
@@ -570,9 +511,7 @@ func TestASRNegative(t *testing.T) {
 
 func TestASLDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x08 // ASL Direct
@@ -590,9 +529,7 @@ func TestASLDirect(t *testing.T) {
 
 func TestASLA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x48 // ASLA
 	cpu.a = 0x1a
@@ -608,9 +545,7 @@ func TestASLA(t *testing.T) {
 
 func TestASLB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x58 // ASLB
 	cpu.b = 0x1a
@@ -626,9 +561,7 @@ func TestASLB(t *testing.T) {
 
 func TestASLZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x48 // ASLA
 	cpu.a = 0x00
@@ -644,9 +577,7 @@ func TestASLZero(t *testing.T) {
 
 func TestASLNegativeAndOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x48 // ASLA
 	cpu.a = 0x42
@@ -662,9 +593,7 @@ func TestASLNegativeAndOverflow(t *testing.T) {
 
 func TestASLCarryAndOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x48 // ASLA
 	cpu.a = 0x81
@@ -680,9 +609,7 @@ func TestASLCarryAndOverflow(t *testing.T) {
 
 func TestDECDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x0a // DEC Direct
@@ -699,9 +626,7 @@ func TestDECDirect(t *testing.T) {
 
 func TestDECA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4a // DECA
 	cpu.a = 0x2b
@@ -716,9 +641,7 @@ func TestDECA(t *testing.T) {
 
 func TestDECB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x5a // DECB
 	cpu.b = 0x2b
@@ -733,9 +656,7 @@ func TestDECB(t *testing.T) {
 
 func TestDECZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4a // DECA
 	cpu.a = 0x01
@@ -750,9 +671,7 @@ func TestDECZero(t *testing.T) {
 
 func TestDECNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4a // DECA
 	cpu.a = 0x00
@@ -767,9 +686,7 @@ func TestDECNegative(t *testing.T) {
 
 func TestDECOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4a // DECA
 	cpu.a = 0x80
@@ -784,9 +701,7 @@ func TestDECOverflow(t *testing.T) {
 
 func TestINCDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x0c // DEC Direct
@@ -803,9 +718,7 @@ func TestINCDirect(t *testing.T) {
 
 func TestINCA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4c // DEC Direct
 	cpu.a = 0x2b
@@ -820,9 +733,7 @@ func TestINCA(t *testing.T) {
 
 func TestINCB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x5c // DEC Direct
 	cpu.b = 0x2b
@@ -837,9 +748,7 @@ func TestINCB(t *testing.T) {
 
 func TestINCZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4c // DEC Direct
 	cpu.a = 0xff
@@ -854,9 +763,7 @@ func TestINCZero(t *testing.T) {
 
 func TestINCNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4c // DEC Direct
 	cpu.a = 0xfb
@@ -871,9 +778,7 @@ func TestINCNegative(t *testing.T) {
 
 func TestINCOverflow(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4c // DEC Direct
 	cpu.a = 0x7f
@@ -888,9 +793,7 @@ func TestINCOverflow(t *testing.T) {
 
 func TestTSTDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x0d // TST Direct
@@ -907,9 +810,7 @@ func TestTSTDirect(t *testing.T) {
 
 func TestTSTA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4d // TSTA
 	cpu.a = 0x32
@@ -924,9 +825,7 @@ func TestTSTA(t *testing.T) {
 
 func TestTSTB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x5d // TSTA
 	cpu.b = 0x32
@@ -941,9 +840,7 @@ func TestTSTB(t *testing.T) {
 
 func TestTSTNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4d // TSTA
 	cpu.a = 0xd8
@@ -958,9 +855,7 @@ func TestTSTNegative(t *testing.T) {
 
 func TestTSTZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4d // TSTA
 	cpu.a = 0x00
@@ -975,9 +870,7 @@ func TestTSTZero(t *testing.T) {
 
 func TestJMPDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x0e // JMP Direct
@@ -989,9 +882,7 @@ func TestJMPDirect(t *testing.T) {
 
 func TestCLRDirect(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.dp = 0x20
 	ram[0x1000] = 0x0f // CLR Direct
@@ -1009,9 +900,7 @@ func TestCLRDirect(t *testing.T) {
 
 func TestCLRA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x4f // CLRA
 	cpu.a = 0x4d
@@ -1027,9 +916,7 @@ func TestCLRA(t *testing.T) {
 
 func TestCLRB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x5f // CLRB
 	cpu.b = 0x4d
@@ -1045,9 +932,7 @@ func TestCLRB(t *testing.T) {
 
 func TestBRAPositive(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x20 // BRA
 	ram[0x1001] = 0x10
@@ -1058,9 +943,7 @@ func TestBRAPositive(t *testing.T) {
 
 func TestLBRAPositive(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x16 // LBRA
 	ram[0x1001] = 0x10
@@ -1072,9 +955,7 @@ func TestLBRAPositive(t *testing.T) {
 
 func TestBRANegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x20 // LBRA
 	ram[0x1001] = 0xfe
@@ -1085,9 +966,7 @@ func TestBRANegative(t *testing.T) {
 
 func TestLBRANegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x16 // LBRA
 	ram[0x1001] = 0xff
@@ -1099,9 +978,7 @@ func TestLBRANegative(t *testing.T) {
 
 func TestLBSR(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.s = 0x400
 	ram[0x1000] = 0x17 // LBSR
@@ -1116,9 +993,7 @@ func TestLBSR(t *testing.T) {
 
 func TestDAA(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x19 // DAA
 	cpu.a = 0x62
@@ -1133,9 +1008,7 @@ func TestDAA(t *testing.T) {
 
 func TestDAALsb(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x19 // DAA
 	cpu.a = 0x4a
@@ -1150,9 +1023,7 @@ func TestDAALsb(t *testing.T) {
 
 func TestDAALsbWithHalfCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x19 // DAA
 	cpu.a = 0x22
@@ -1168,9 +1039,7 @@ func TestDAALsbWithHalfCarry(t *testing.T) {
 
 func TestDAAMsb(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x19 // DAA
 	cpu.a = 0xb7
@@ -1185,9 +1054,7 @@ func TestDAAMsb(t *testing.T) {
 
 func TestDAAMsbWithCarry(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x19 // DAA
 	cpu.a = 0x19
@@ -1203,9 +1070,7 @@ func TestDAAMsbWithCarry(t *testing.T) {
 
 func TestDAALsbAndMsb(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x19 // DAA
 	cpu.a = 0x9a
@@ -1221,9 +1086,7 @@ func TestDAALsbAndMsb(t *testing.T) {
 
 func TestORCC(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.cc = carry | negative
 	ram[0x1000] = 0x1a // ORCC
@@ -1236,9 +1099,7 @@ func TestORCC(t *testing.T) {
 
 func TestANDCC(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.cc = carry | negative
 	ram[0x1000] = 0x1c // ANDCC
@@ -1251,9 +1112,7 @@ func TestANDCC(t *testing.T) {
 
 func TestSEX(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1d // SEX
 	cpu.b = 0x16
@@ -1268,9 +1127,7 @@ func TestSEX(t *testing.T) {
 
 func TestSEXNegative(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1d // SEX
 	cpu.b = 0xa5
@@ -1285,9 +1142,7 @@ func TestSEXNegative(t *testing.T) {
 
 func TestSEXZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1d // SEX
 	cpu.b = 0x00
@@ -1302,9 +1157,7 @@ func TestSEXZero(t *testing.T) {
 
 func TestEXGAB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1e // EXG
 	ram[0x1001] = 0x89
@@ -1319,9 +1172,7 @@ func TestEXGAB(t *testing.T) {
 
 func TestEXGXY(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1e // EXG
 	ram[0x1001] = 0x12
@@ -1336,9 +1187,7 @@ func TestEXGXY(t *testing.T) {
 
 func TestEXGInvalidRegisterCombination(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1e // EXG
 	ram[0x1001] = 0x85
@@ -1351,9 +1200,7 @@ func TestEXGInvalidRegisterCombination(t *testing.T) {
 
 func TestEXGInvalidCode(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1e // EXG
 	ram[0x1001] = 0x67
@@ -1366,9 +1213,7 @@ func TestEXGInvalidCode(t *testing.T) {
 
 func TestTFRAtoB(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1f // TFR
 	ram[0x1001] = 0x89
@@ -1382,9 +1227,7 @@ func TestTFRAtoB(t *testing.T) {
 
 func TestTFRPCtoX(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1f // TFR
 	ram[0x1001] = 0x51
@@ -1396,9 +1239,7 @@ func TestTFRPCtoX(t *testing.T) {
 
 func TestTFRInvalidRegisterCombination(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1f // TFR
 	ram[0x1001] = 0x85
@@ -1411,9 +1252,7 @@ func TestTFRInvalidRegisterCombination(t *testing.T) {
 
 func TestTFRInvalidRegisterCode(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x1f // TFR
 	ram[0x1001] = 0x8f
@@ -1426,9 +1265,7 @@ func TestTFRInvalidRegisterCode(t *testing.T) {
 
 func branchingOpcodeTest(t *testing.T, opcode Word, flags []uint8, branch bool) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = opcode
 	ram[0x1001] = 0x10
@@ -1654,9 +1491,7 @@ func TestLEAX(t *testing.T) {
 
 func TestLEAXZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.y = 0x100
 	cpu.a = 0xff
@@ -1673,9 +1508,7 @@ func TestLEAXZero(t *testing.T) {
 
 func TestLEAY(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	ram[0x1000] = 0x31 // LEAY
 	ram[0x1001] = 0x8c // EA = PC + 8 bits offset
@@ -1688,9 +1521,7 @@ func TestLEAY(t *testing.T) {
 
 func TestLEAYZero(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.y = 0x0100
 	cpu.u = 0
@@ -1705,9 +1536,7 @@ func TestLEAYZero(t *testing.T) {
 
 func TestLEAS(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.x = 0x800
 	ram[0x1000] = 0x32 // LEAS
@@ -1722,9 +1551,7 @@ func TestLEAS(t *testing.T) {
 
 func TestLEAU(t *testing.T) {
 	assert := assert.New(t)
-	var cpu CPU
-	ram := NewRam()
-	cpu.Initialize(ram)
+	var cpu, ram = newCPU()
 	cpu.pc = 0x1000
 	cpu.y = 0x2000
 	ram[0x1000] = 0x33 // LEAU
@@ -1736,4 +1563,257 @@ func TestLEAU(t *testing.T) {
 	assert.That(cpu.u).AsInt().IsEqualTo(0x1f40)
 	assert.That(cpu.y).AsInt().IsEqualTo(0x2002)
 	assert.ThatInt(int(cpu.clock)).IsEqualTo(10)
+}
+
+func TestPSHS(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.u = 0x7fff
+	cpu.y = 0xa200
+	cpu.x = 0xa100
+	cpu.dp = 0x04
+	cpu.b = 0x4f
+	cpu.a = 0x05
+	cpu.cc = 0x03
+	cpu.s = 0xd000
+	ram[0x1000] = 0x34 // PSHS
+	ram[0x1001] = 0xff // Push All
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.ThatInt(int(cpu.readw(0xcffe))).IsEqualTo(0x1002)
+	assert.ThatInt(int(cpu.readw(0xcffc))).IsEqualTo(0x7fff)
+	assert.ThatInt(int(cpu.readw(0xcffa))).IsEqualTo(0xa200)
+	assert.ThatInt(int(cpu.readw(0xcff8))).IsEqualTo(0xa100)
+	assert.ThatInt(int(cpu.read(0xcff7))).IsEqualTo(0x04)
+	assert.ThatInt(int(cpu.read(0xcff6))).IsEqualTo(0x4f)
+	assert.ThatInt(int(cpu.s)).IsEqualTo(0xcff4)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(17)
+}
+
+func TestPULS(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.s = 0xcff4
+	ram[0x1000] = 0x35 // PULS
+	ram[0x1001] = 0xff // All registers
+	cpu.writew(0xcffe, 0x2000)
+	cpu.writew(0xcffc, 0x7fff)
+	cpu.writew(0xcffa, 0xa200)
+	cpu.writew(0xcff8, 0xa100)
+	cpu.write(0xcff7, 0x04)
+	cpu.write(0xcff6, 0x4f)
+	cpu.write(0xcff5, 0x05)
+	cpu.write(0xcff4, 0x03)
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x2000)
+	assert.ThatInt(int(cpu.s)).IsEqualTo(0xd000)
+	assert.ThatInt(int(cpu.cc)).IsEqualTo(0x03)
+	assert.ThatInt(int(cpu.a)).IsEqualTo(0x05)
+	assert.ThatInt(int(cpu.b)).IsEqualTo(0x4f)
+	assert.ThatInt(int(cpu.dp)).IsEqualTo(0x04)
+	assert.ThatInt(int(cpu.x)).IsEqualTo(0xa100)
+	assert.ThatInt(int(cpu.y)).IsEqualTo(0xa200)
+	assert.ThatInt(int(cpu.u)).IsEqualTo(0x7fff)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(17)
+}
+
+func TestPSHU(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.s = 0x7fff
+	cpu.y = 0xa200
+	cpu.x = 0xa100
+	cpu.dp = 0x04
+	cpu.b = 0x4f
+	cpu.a = 0x05
+	cpu.cc = 0x03
+	cpu.u = 0xd000
+	ram[0x1000] = 0x36 // PSHU
+	ram[0x1001] = 0xff // Push All
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002)
+	assert.ThatInt(int(cpu.readw(0xcffe))).IsEqualTo(0x1002)
+	assert.ThatInt(int(cpu.readw(0xcffc))).IsEqualTo(0x7fff)
+	assert.ThatInt(int(cpu.readw(0xcffa))).IsEqualTo(0xa200)
+	assert.ThatInt(int(cpu.readw(0xcff8))).IsEqualTo(0xa100)
+	assert.ThatInt(int(cpu.read(0xcff7))).IsEqualTo(0x04)
+	assert.ThatInt(int(cpu.read(0xcff6))).IsEqualTo(0x4f)
+	assert.ThatInt(int(cpu.u)).IsEqualTo(0xcff4)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(17)
+}
+
+func TestPULU(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.u = 0xcff4
+	ram[0x1000] = 0x37 // PULU
+	ram[0x1001] = 0xff // All registers
+	cpu.writew(0xcffe, 0x2000)
+	cpu.writew(0xcffc, 0x7fff)
+	cpu.writew(0xcffa, 0xa200)
+	cpu.writew(0xcff8, 0xa100)
+	cpu.write(0xcff7, 0x04)
+	cpu.write(0xcff6, 0x4f)
+	cpu.write(0xcff5, 0x05)
+	cpu.write(0xcff4, 0x03)
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x2000)
+	assert.ThatInt(int(cpu.u)).IsEqualTo(0xd000)
+	assert.ThatInt(int(cpu.cc)).IsEqualTo(0x03)
+	assert.ThatInt(int(cpu.a)).IsEqualTo(0x05)
+	assert.ThatInt(int(cpu.b)).IsEqualTo(0x4f)
+	assert.ThatInt(int(cpu.dp)).IsEqualTo(0x04)
+	assert.ThatInt(int(cpu.x)).IsEqualTo(0xa100)
+	assert.ThatInt(int(cpu.y)).IsEqualTo(0xa200)
+	assert.ThatInt(int(cpu.s)).IsEqualTo(0x7fff)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(17)
+}
+
+func TestRTS(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.s = 0xcffe
+	ram[0x1000] = 0x39 // RTS
+	cpu.writew(cpu.s, 0x3000)
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x3000)
+	assert.ThatInt(int(cpu.s)).IsEqualTo(0xd000)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(5)
+}
+
+func TestABX(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.x = 0x2f00
+	cpu.b = 0x50
+	ram[0x1000] = 0x3a // ABX
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.x)).IsEqualTo(0x2f50)
+	assert.ThatInt(int(cpu.b)).IsEqualTo(0x50)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(3)
+}
+
+func TestRTIPartial(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.s = 0xbffd
+	ram[0x1000] = 0x3b // RTI
+	cpu.write(0xbffd, 0x05)
+	cpu.writew(0xbffe, 0x2000)
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x2000)
+	assert.ThatInt(int(cpu.cc)).IsEqualTo(0x05)
+	assert.ThatInt(int(cpu.s)).IsEqualTo(0xc000)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(6)
+}
+
+func TestRTIEntire(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.s = 0xbff4
+	ram[0x1000] = 0x3b // RTI
+	cpu.writew(0xbffe, 0x2000)
+	cpu.writew(0xbffc, 0x7fff)
+	cpu.writew(0xbffa, 0xa200)
+	cpu.writew(0xbff8, 0xa100)
+	cpu.write(0xbff7, 0x04)
+	cpu.write(0xbff6, 0x4f)
+	cpu.write(0xbff5, 0x05)
+	cpu.write(0xbff4, 0x83)
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x2000)
+	assert.ThatInt(int(cpu.cc)).IsEqualTo(0x83)
+	assert.ThatInt(int(cpu.a)).IsEqualTo(0x05)
+	assert.ThatInt(int(cpu.b)).IsEqualTo(0x4f)
+	assert.ThatInt(int(cpu.dp)).IsEqualTo(0x04)
+	assert.ThatInt(int(cpu.x)).IsEqualTo(0xa100)
+	assert.ThatInt(int(cpu.y)).IsEqualTo(0xa200)
+	assert.ThatInt(int(cpu.u)).IsEqualTo(0x7fff)
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x2000)
+	assert.ThatInt(int(cpu.s)).IsEqualTo(0xc000)
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(15)
+}
+
+func TestMUL(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.a = 0x25
+	cpu.b = 0xd0
+	ram[0x1000] = 0x3d // MUL
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.d())).IsEqualTo(0x1e10)
+	assert.ThatBool(cpu.getZ()).IsFalse()
+	assert.ThatBool(cpu.getC()).IsFalse()
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(11)
+}
+
+func TestMULCarry(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.a = 0x65
+	cpu.b = 0xdf
+	ram[0x1000] = 0x3d // MUL
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.d())).IsEqualTo(0x57fb)
+	assert.ThatBool(cpu.getZ()).IsFalse()
+	assert.ThatBool(cpu.getC()).IsTrue()
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(11)
+}
+
+func TestMULZero(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.a = 0x65
+	cpu.b = 0x00
+	ram[0x1000] = 0x3d // MUL
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.d())).IsEqualTo(0)
+	assert.ThatBool(cpu.getZ()).IsTrue()
+	assert.ThatBool(cpu.getC()).IsFalse()
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(11)
+}
+
+func TestSWI(t *testing.T) {
+	assert := assert.New(t)
+	var cpu, ram = newCPU()
+	cpu.pc = 0x1000
+	cpu.u = 0x7fff
+	cpu.y = 0xa200
+	cpu.x = 0xa100
+	cpu.dp = 0x04
+	cpu.b = 0x4f
+	cpu.a = 0x05
+	cpu.cc = 0x03
+	cpu.s = 0xd000
+	ram[0x1000] = 0x3f         // SWI
+	cpu.writew(0xfffa, 0xe000) // Interupt Vector Address
+	cpu.step()
+	assert.ThatInt(int(cpu.pc)).IsEqualTo(0xe000)
+	assert.ThatInt(int(cpu.readw(0xcffe))).IsEqualTo(0x1001)
+	assert.ThatInt(int(cpu.readw(0xcffc))).IsEqualTo(0x7fff)
+	assert.ThatInt(int(cpu.readw(0xcffa))).IsEqualTo(0xa200)
+	assert.ThatInt(int(cpu.readw(0xcff8))).IsEqualTo(0xa100)
+	assert.ThatInt(int(cpu.read(0xcff7))).IsEqualTo(0x04)
+	assert.ThatInt(int(cpu.read(0xcff6))).IsEqualTo(0x4f)
+	assert.ThatInt(int(cpu.read(0xcff5))).IsEqualTo(0x05)
+	assert.ThatInt(int(cpu.read(0xcff4))).IsEqualTo(0x83)
+	assert.ThatBool(cpu.getE()).IsTrue()
+	assert.ThatBool(cpu.getI()).IsTrue()
+	assert.ThatBool(cpu.getF()).IsTrue()
+	assert.ThatInt(int(cpu.clock)).IsEqualTo(19)
 }

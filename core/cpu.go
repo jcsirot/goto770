@@ -131,10 +131,15 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x31] = Opcode{func() { c.leay(c.indexed()) }, 4}
 	opcodes[0x32] = Opcode{func() { c.leas(c.indexed()) }, 4}
 	opcodes[0x33] = Opcode{func() { c.leau(c.indexed()) }, 4}
-	//	opcodes[0x34] = Opcode{func() { c.pshs(c.immediate()) }, 5}
-	//	opcodes[0x35] = Opcode{func() { c.puls(c.immediate()) }, 5}
-	//	opcodes[0x36] = Opcode{func() { c.pshu(c.immediate()) }, 5}
-	//	opcodes[0x37] = Opcode{func() { c.pulu(c.immediate()) }, 5}
+	opcodes[0x34] = Opcode{func() { c.pshs(c.immediate()) }, 5}
+	opcodes[0x35] = Opcode{func() { c.puls(c.immediate()) }, 5}
+	opcodes[0x36] = Opcode{func() { c.pshu(c.immediate()) }, 5}
+	opcodes[0x37] = Opcode{func() { c.pulu(c.immediate()) }, 5}
+	opcodes[0x39] = Opcode{func() { c.rts() }, 5}
+	opcodes[0x3a] = Opcode{func() { c.abx() }, 3}
+	opcodes[0x3b] = Opcode{func() { c.rti() }, 3}
+	opcodes[0x3d] = Opcode{func() { c.mul() }, 11}
+	opcodes[0x3f] = Opcode{func() { c.swi() }, 7}
 	opcodes[0x40] = Opcode{func() { c.nega() }, 2}
 	opcodes[0x43] = Opcode{func() { c.coma() }, 2}
 	opcodes[0x44] = Opcode{func() { c.lsra() }, 2}
@@ -181,6 +186,19 @@ func (c *CPU) step() uint64 {
 	return opcode.cycles
 
 }
+
+/*******************************/
+/**     CC register flags     **/
+/*******************************/
+
+func (c *CPU) getE() bool {
+	return c.cc&entire == entire
+}
+
+func (c *CPU) setE() {
+	c.cc |= entire
+}
+
 func (c *CPU) getH() bool {
 	return c.cc&halfCarry == halfCarry
 }
@@ -277,6 +295,26 @@ func (c *CPU) updateV(value bool) {
 		c.clearV()
 	}
 }
+
+func (c *CPU) getF() bool {
+	return c.cc&firqmask == firqmask
+}
+
+func (c *CPU) setF() {
+	c.cc |= firqmask
+}
+
+func (c *CPU) getI() bool {
+	return c.cc&irqmask == irqmask
+}
+
+func (c *CPU) setI() {
+	c.cc |= irqmask
+}
+
+/***************************/
+/**     Memory access     **/
+/***************************/
 
 func (c *CPU) read(address uint16) Word {
 	return c.ram[address]
@@ -813,6 +851,7 @@ func (c *CPU) ble(address uint16) {
 	}
 }
 
+/** Load Effective Address into Register X */
 func (c *CPU) leax(address uint16) {
 	c.x = DWord(address)
 	if address == 0 {
@@ -822,6 +861,7 @@ func (c *CPU) leax(address uint16) {
 	}
 }
 
+/** Load Effective Address into Register Y */
 func (c *CPU) leay(address uint16) {
 	c.y = DWord(address)
 	if address == 0 {
@@ -831,10 +871,232 @@ func (c *CPU) leay(address uint16) {
 	}
 }
 
+/** Load Effective Address into Register S */
 func (c *CPU) leas(address uint16) {
 	c.s = address
 }
 
+/** Load Effective Address into Register U */
 func (c *CPU) leau(address uint16) {
 	c.u = address
+}
+
+func isBitSet(value uint8, flag uint) bool {
+	return value&(1<<flag) != 0
+}
+
+func (c *CPU) pushRegister(value interface{}, stack *uint16) {
+	switch t := value.(type) {
+	case uint8:
+		*stack--
+		c.write(*stack, Word(t))
+		c.clock++
+	case Word:
+		*stack--
+		c.write(*stack, Word(t))
+		c.clock++
+	case uint16:
+		*stack -= 2
+		c.writew(*stack, DWord(t))
+		c.clock += 2
+	case DWord:
+		*stack -= 2
+		c.writew(*stack, DWord(t))
+		c.clock += 2
+	default:
+		// WTF
+	}
+}
+
+func (c *CPU) pullRegister(target interface{}, stack *uint16) {
+	switch t := target.(type) {
+	case *uint8:
+		*t = uint8(c.read(*stack))
+		*stack++
+		c.clock++
+	case *Word:
+		*t = Word(c.read(*stack))
+		*stack++
+		c.clock++
+	case *uint16:
+		*t = uint16(c.readw(*stack))
+		*stack += 2
+		c.clock += 2
+	case *DWord:
+		*t = DWord(c.readw(*stack))
+		*stack += 2
+		c.clock += 2
+	default:
+		// WTF
+	}
+}
+
+/** Push Registers on the Hardware Stack */
+func (c *CPU) pshs(address uint16) {
+	registers := uint8(c.read(address))
+	if isBitSet(registers, 7) {
+		c.pushRegister(c.pc, &c.s)
+	}
+	if isBitSet(registers, 6) {
+		c.pushRegister(c.u, &c.s)
+	}
+	if isBitSet(registers, 5) {
+		c.pushRegister(c.y, &c.s)
+	}
+	if isBitSet(registers, 4) {
+		c.pushRegister(c.x, &c.s)
+	}
+	if isBitSet(registers, 3) {
+		c.pushRegister(c.dp, &c.s)
+	}
+	if isBitSet(registers, 2) {
+		c.pushRegister(c.b, &c.s)
+	}
+	if isBitSet(registers, 1) {
+		c.pushRegister(c.a, &c.s)
+	}
+	if isBitSet(registers, 0) {
+		c.pushRegister(c.cc, &c.s)
+	}
+}
+
+/** Pull Registers from the Hardware Stack */
+func (c *CPU) puls(address uint16) {
+	registers := uint8(c.read(address))
+	if isBitSet(registers, 0) {
+		c.pullRegister(&c.cc, &c.s)
+	}
+	if isBitSet(registers, 1) {
+		c.pullRegister(&c.a, &c.s)
+	}
+	if isBitSet(registers, 2) {
+		c.pullRegister(&c.b, &c.s)
+	}
+	if isBitSet(registers, 3) {
+		c.pullRegister(&c.dp, &c.s)
+	}
+	if isBitSet(registers, 4) {
+		c.pullRegister(&c.x, &c.s)
+	}
+	if isBitSet(registers, 5) {
+		c.pullRegister(&c.y, &c.s)
+	}
+	if isBitSet(registers, 6) {
+		c.pullRegister(&c.u, &c.s)
+	}
+	if isBitSet(registers, 7) {
+		c.pullRegister(&c.pc, &c.s)
+	}
+}
+
+/** Push Registers on the User Stack */
+func (c *CPU) pshu(address uint16) {
+	registers := uint8(c.read(address))
+	if isBitSet(registers, 7) {
+		c.pushRegister(c.pc, &c.u)
+	}
+	if isBitSet(registers, 6) {
+		c.pushRegister(c.s, &c.u)
+	}
+	if isBitSet(registers, 5) {
+		c.pushRegister(c.y, &c.u)
+	}
+	if isBitSet(registers, 4) {
+		c.pushRegister(c.x, &c.u)
+	}
+	if isBitSet(registers, 3) {
+		c.pushRegister(c.dp, &c.u)
+	}
+	if isBitSet(registers, 2) {
+		c.pushRegister(c.b, &c.u)
+	}
+	if isBitSet(registers, 1) {
+		c.pushRegister(c.a, &c.u)
+	}
+	if isBitSet(registers, 0) {
+		c.pushRegister(c.cc, &c.u)
+	}
+}
+
+/** Pull Registers from the User Stack */
+func (c *CPU) pulu(address uint16) {
+	registers := uint8(c.read(address))
+	if isBitSet(registers, 0) {
+		c.pullRegister(&c.cc, &c.u)
+	}
+	if isBitSet(registers, 1) {
+		c.pullRegister(&c.a, &c.u)
+	}
+	if isBitSet(registers, 2) {
+		c.pullRegister(&c.b, &c.u)
+	}
+	if isBitSet(registers, 3) {
+		c.pullRegister(&c.dp, &c.u)
+	}
+	if isBitSet(registers, 4) {
+		c.pullRegister(&c.x, &c.u)
+	}
+	if isBitSet(registers, 5) {
+		c.pullRegister(&c.y, &c.u)
+	}
+	if isBitSet(registers, 6) {
+		c.pullRegister(&c.s, &c.u)
+	}
+	if isBitSet(registers, 7) {
+		c.pullRegister(&c.pc, &c.u)
+	}
+}
+
+/** Return from Subroutine */
+func (c *CPU) rts() {
+	c.pc = uint16(c.readw(c.s))
+	c.s += 2
+}
+
+/** Add Accumulator B into Index Register X */
+func (c *CPU) abx() {
+	c.x += DWord(c.b)
+}
+
+/** Return from Interrupt */
+func (c *CPU) rti() {
+	c.pullRegister(&c.cc, &c.s)
+	if c.getE() {
+		c.pullRegister(&c.a, &c.s)
+		c.pullRegister(&c.b, &c.s)
+		c.pullRegister(&c.dp, &c.s)
+		c.pullRegister(&c.x, &c.s)
+		c.pullRegister(&c.y, &c.s)
+		c.pullRegister(&c.u, &c.s)
+	}
+	c.pullRegister(&c.pc, &c.s)
+}
+
+/** Multiply - ZxCx */
+func (c *CPU) mul() {
+	value := uint16(c.a) * uint16(c.b)
+	c.a = Word(value >> 8)
+	c.b = Word(value & 0xff)
+	if c.d() == 0 {
+		c.setZ()
+	} else {
+		c.clearZ()
+	}
+	c.updateC(c.b&0x80 != 0)
+}
+
+/** Software Interrupt */
+func (c *CPU) swi() {
+	c.setE()
+	c.pushRegister(c.pc, &c.s)
+	c.pushRegister(c.u, &c.s)
+	c.pushRegister(c.y, &c.s)
+	c.pushRegister(c.x, &c.s)
+	c.pushRegister(c.dp, &c.s)
+	c.pushRegister(c.b, &c.s)
+	c.pushRegister(c.a, &c.s)
+	c.pushRegister(c.cc, &c.s)
+	c.setF()
+	c.setI()
+	c.pc = uint16(c.readw(0xfffa))
 }
