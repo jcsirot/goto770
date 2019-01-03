@@ -62,4 +62,4 @@ format:
 test: prepare_test
 	@ginkgo -progress
 
-.PHONY: all test clean
+.PHONY: all build test clean
