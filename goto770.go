@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/golang/glog"
+	log "github.com/sirupsen/logrus"
 
-	"github.com/jcsirot/goto770/core"
+	"github.com/jcsirot/goto770/pkg/core"
 )
 
 func usage() {
@@ -25,8 +25,7 @@ func init() {
 
 func main() {
 	var wg sync.WaitGroup
-	glog.Infoln("Starting GoTo7/70")
-	defer glog.Flush()
+	log.Infoln("Starting GoTo7/70")
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

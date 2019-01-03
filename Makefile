@@ -51,7 +51,7 @@ clean:
 	@rm -Rf build
 
 prepare_test:
-	@go get -v github.com/assertgo/assert
+	@go get -v github.com/onsi/ginkgo/ginkgo
 
 build: format
 	@go build -v $(VERSION_FLAG) -o $(GO)/bin/goto770 goto770.go
@@ -60,6 +60,6 @@ format:
 	@go fmt $(PKGS)
 
 test: prepare_test
-	@go test -v -cover $(PKGS);
+	@ginkgo -progress
 
 .PHONY: all test clean
