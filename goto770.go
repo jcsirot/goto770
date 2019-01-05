@@ -9,7 +9,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/jcsirot/goto770/pkg/core"
+	"github.com/jcsirot/goto770/core"
 )
 
 func usage() {
