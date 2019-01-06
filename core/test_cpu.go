@@ -479,6 +479,35 @@ var _ = Describe("CPU", func() {
 		})
 	})
 
+	Context("[CMP]", func() {
+
+		It("[Immediate] should implement CMPA with Immediate addessing mode", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x81) // CMPA
+			cpu.write(0x1001, 0x04)
+			cpu.a.set(0x3e)
+			cpu.step()
+
+			ExpectA(cpu, 0x3e)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement CMPA with Immediate addessing mode with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x81) // CMPA
+			cpu.write(0x1001, 0x06)
+			cpu.a.set(0x04)
+			cpu.step()
+
+			ExpectA(cpu, 0x04)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "NC", "ZV")
+		})
+	})
+
 	Context("[SUB]", func() {
 
 		It("[Immediate] should implement SUBA with Immediate addessing mode", func() {
@@ -489,6 +518,19 @@ var _ = Describe("CPU", func() {
 			cpu.step()
 
 			ExpectA(cpu, 0x3a)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement SUBB with Immediate addessing mode", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc0) // SUBB
+			cpu.write(0x1001, 0x04)
+			cpu.b.set(0x3e)
+			cpu.step()
+
+			ExpectB(cpu, 0x3a)
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "", "NZVC")
@@ -522,7 +564,7 @@ var _ = Describe("CPU", func() {
 			ExpectCCR(cpu, "Z", "NVC")
 		})
 
-		It("[Immediate] should implement SUBA with Immediate addessing mode with bit Z", func() {
+		It("[Immediate] should implement SUBA with Immediate addessing mode with bit NC", func() {
 			cpu.pc.set(0x1000)
 			cpu.write(0x1000, 0x80) // SUBA
 			cpu.write(0x1001, 0x06)
@@ -561,6 +603,124 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1003)
 			ExpectClock(cpu, 4)
 			ExpectCCR(cpu, "CN", "ZV")
+		})
+
+		It("[Extended] should implement SUBA with Extended addessing mode", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xb0) // SUBA
+			cpu.writew(0x1001, 0x30a0)
+			cpu.write(0x30a0, 0x0e)
+			cpu.a.set(0x3e)
+			cpu.step()
+
+			ExpectA(cpu, 0x30)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Extended] should implement SUBD with Extended addessing mode", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xb3) // SUBD
+			cpu.writew(0x1001, 0x20a0)
+			cpu.writew(0x20a0, 0x1401)
+			cpu.a.set(0x16)
+			cpu.b.set(0x50)
+			cpu.step()
+
+			ExpectD(cpu, 0x024f)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 7)
+			ExpectCCR(cpu, "", "CNZV")
+		})
+
+		It("[Extended] should implement SUBD with Extended addessing mode and bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xb3) // SUBD
+			cpu.writew(0x1001, 0x20a0)
+			cpu.writew(0x20a0, 0x18b8)
+			cpu.a.set(0x18)
+			cpu.b.set(0xb8)
+			cpu.step()
+
+			ExpectD(cpu, 0)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 7)
+			ExpectCCR(cpu, "Z", "CNV")
+		})
+	})
+
+	Context("[SBC]", func() {
+
+		It("[Immediate] should implement SBCA with Immediate addessing mode", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x82) // SBCA
+			cpu.write(0x1001, 0x04)
+			cpu.a.set(0x3e)
+
+			cpu.step()
+
+			ExpectA(cpu, 0x3a)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement SBCA with Immediate addessing mode with bit C", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x82) // SBCA
+			cpu.write(0x1001, 0x04)
+			cpu.a.set(0x3e)
+			cpu.cc.setC()
+
+			cpu.step()
+
+			ExpectA(cpu, 0x39)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement SBCA with Immediate addessing mode with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x82) // SBCA
+			cpu.write(0x1001, 0x3e)
+			cpu.a.set(0x3e)
+
+			cpu.step()
+
+			ExpectA(cpu, 0)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "Z", "NVC")
+		})
+
+		It("[Immediate] should implement SBCA with Immediate addessing mode with bit NC", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x82) // SBCA
+			cpu.write(0x1001, 0x0b)
+			cpu.a.set(0x09)
+
+			cpu.step()
+
+			ExpectA(cpu, 0xfe)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "NC", "ZV")
+		})
+
+		It("[Immediate] should implement SBCA with Immediate addessing mode with bit V", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x82) // SBCA
+			cpu.write(0x1001, 0x03)
+			cpu.a.set(0x82)
+
+			cpu.step()
+
+			ExpectA(cpu, 0x7f)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "V", "NZC")
 		})
 	})
 
@@ -753,6 +913,74 @@ var _ = Describe("CPU", func() {
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "N", "ZV")
 		})
+
+		It("[Immediate] should implement ANDB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc4) // ANDA
+			cpu.write(0x1001, 0x91)
+			cpu.b.set(0x55)
+			cpu.step()
+
+			ExpectB(cpu, 0x11)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZV")
+		})
+	})
+
+	Context("[BIT]", func() {
+
+		It("[Immediate] should implement BITA with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x85) // BITA
+			cpu.write(0x1001, 0x80)
+			cpu.a.set(0x55)
+			cpu.step()
+
+			ExpectA(cpu, 0x55)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Immediate] should implement BITA with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x85) // BITA
+			cpu.write(0x1001, 0x8a)
+			cpu.a.set(0x86)
+			cpu.step()
+
+			ExpectA(cpu, 0x86)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Immediate] should implement BITB with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc5) // BITB
+			cpu.write(0x1001, 0x80)
+			cpu.b.set(0x55)
+			cpu.step()
+
+			ExpectB(cpu, 0x55)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Immediate] should implement BITB with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc5) // BITB
+			cpu.write(0x1001, 0x8a)
+			cpu.b.set(0x86)
+			cpu.step()
+
+			ExpectB(cpu, 0x86)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "N", "ZV")
+		})
 	})
 
 	Context("[LD]", func() {
@@ -791,6 +1019,118 @@ var _ = Describe("CPU", func() {
 			ExpectA(cpu, 0xa1)
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Immediate] should implement LDB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc6) // LDB
+			cpu.write(0x1001, 0x67)
+			cpu.step()
+
+			ExpectB(cpu, 0x67)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Immediate] should implement LDB with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc6) // LDB
+			cpu.write(0x1001, 0x00)
+			cpu.a.set(0xf5)
+			cpu.step()
+
+			ExpectB(cpu, 0x00)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Immediate] should implement LDB with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc6) // LDB
+			cpu.write(0x1001, 0xa1)
+			cpu.step()
+
+			ExpectB(cpu, 0xa1)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Immediate] should implement LDD", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xcc) // LDD
+			cpu.writew(0x1001, 0x2a89)
+			cpu.step()
+
+			ExpectD(cpu, 0x2a89)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 3)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Immediate] should implement LDD with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xcc) // LDD
+			cpu.writew(0x1001, 0x00)
+			cpu.a.set(0xf5)
+			cpu.b.set(0x89)
+			cpu.step()
+
+			ExpectD(cpu, 0x0000)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 3)
+			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Immediate] should implement LDD with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xcc) // LDD
+			cpu.writew(0x1001, 0xa189)
+			cpu.step()
+
+			ExpectD(cpu, 0xa189)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 3)
+			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Immediate] should implement LDU", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xce) // LDU
+			cpu.writew(0x1001, 0x2a89)
+			cpu.step()
+
+			ExpectU(cpu, 0x2a89)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 3)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Immediate] should implement LDU with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xce) // LDU
+			cpu.writew(0x1001, 0x00)
+			cpu.u.set(0xf589)
+			cpu.step()
+
+			ExpectU(cpu, 0x0000)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 3)
+			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Immediate] should implement LDU with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xce) // LDU
+			cpu.writew(0x1001, 0xa189)
+			cpu.step()
+
+			ExpectU(cpu, 0xa189)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 3)
 			ExpectCCR(cpu, "N", "ZV")
 		})
 	})
@@ -834,6 +1174,19 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Immediate] should implement EORB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc8) // EORB
+			cpu.write(0x1001, 0x7a)
+			cpu.b.set(0x22)
+			cpu.step()
+
+			ExpectB(cpu, 0x58)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZV")
 		})
 	})
 
@@ -916,6 +1269,20 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "NV", "ZHC")
+		})
+
+		It("[Immediate] should implement ADCB with Carry", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc9) // ADCB
+			cpu.write(0x1001, 0x0a)
+			cpu.b.set(0x62)
+			cpu.cc.setC()
+			cpu.step()
+
+			ExpectB(cpu, 0x6d)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVHC")
 		})
 	})
 
@@ -1036,6 +1403,19 @@ var _ = Describe("CPU", func() {
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "N", "ZV")
 		})
+
+		It("[Immediate] should implement ORB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xca) // ORB
+			cpu.write(0x1001, 0x42)
+			cpu.b.set(0x79)
+			cpu.step()
+
+			ExpectB(cpu, 0x7b)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZV")
+		})
 	})
 
 	Context("[ADD]", func() {
@@ -1051,6 +1431,19 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "", "NZVHC")
+		})
+
+		It("[Immediate] should implement ADDA with bit H", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x8b) // ADDA
+			cpu.write(0x1001, 0x0f)
+			cpu.a.set(0x01)
+			cpu.step()
+
+			ExpectA(cpu, 0x10)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "H", "NZVC")
 		})
 
 		It("[Immediate] should implement ADDA with bit N", func() {
@@ -1103,6 +1496,75 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "NV", "ZHC")
+		})
+
+		It("[Immediate] should implement ADDB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xcb) // ADDB
+			cpu.write(0x1001, 0x14)
+			cpu.b.set(0x23)
+			cpu.step()
+
+			ExpectB(cpu, 0x37)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVHC")
+		})
+
+		It("[Immediate] should implement ADDD", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc3) // ADDD
+			cpu.writew(0x1001, 0x2c80)
+			cpu.a.set(0x50)
+			cpu.b.set(0x50)
+			cpu.step()
+
+			ExpectD(cpu, 0x7cd0)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement ADDD with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc3) // ADDD
+			cpu.writew(0x1001, 0x0004)
+			cpu.a.set(0x8f)
+			cpu.b.set(0x76)
+			cpu.step()
+
+			ExpectD(cpu, 0x8f7a)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "N", "ZVC")
+		})
+
+		It("[Immediate] should implement ADDD with bit NV", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc3) // ADDD
+			cpu.writew(0x1001, 0x0003)
+			cpu.a.set(0x7f)
+			cpu.b.set(0xfe)
+			cpu.step()
+
+			ExpectD(cpu, 0x8001)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "NV", "ZC")
+		})
+
+		It("[Immediate] should implement ADDD with bit C", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc3) // ADDD
+			cpu.writew(0x1001, 0x0003)
+			cpu.a.set(0xff)
+			cpu.b.set(0xfe)
+			cpu.step()
+
+			ExpectD(cpu, 0x0001)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "C", "NZV")
 		})
 	})
 
@@ -2157,6 +2619,7 @@ func ExpectMemory(cpu CPU, address uint16, expected interface{}) {
 	ExpectWithOffset(1, cpu.read(address)).To(BeEquivalentTo(expected))
 }
 
+// ExpectWord asserts a value at a memory address
 func ExpectWord(cpu CPU, address uint16, expected interface{}) {
 	ExpectWithOffset(1, cpu.readw(address)).To(BeEquivalentTo(expected))
 }
@@ -2168,7 +2631,7 @@ func ExpectA(cpu CPU, expected interface{}) {
 
 // ExpectB asserts a value in B registry
 func ExpectB(cpu CPU, expected interface{}) {
-	ExpectWithOffset(1, cpu.b.get()).To(BeEquivalentTo(expected))
+	ExpectWithOffset(1, cpu.b.get()).To(BeEquivalentTo(expected), "Expected B register to be 0x%x but is 0x%x", expected, cpu.b.get())
 }
 
 // ExpectD asserts a value in D registry
@@ -2181,7 +2644,7 @@ func ExpectS(cpu CPU, expected interface{}) {
 	ExpectWithOffset(1, cpu.s.get()).To(BeEquivalentTo(expected), "Expected S register to be 0x%x but is 0x%x", expected, cpu.s.get())
 }
 
-// ExpectS asserts a value in S registry
+// ExpectU asserts a value in U registry
 func ExpectU(cpu CPU, expected interface{}) {
 	ExpectWithOffset(1, cpu.u.get()).To(BeEquivalentTo(expected), "Expected U register to be 0x%x but is 0x%x", expected, cpu.u.get())
 }

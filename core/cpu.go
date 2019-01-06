@@ -40,7 +40,7 @@ const (
 	indexed    addressMode = 7
 )
 
-// Cpu structure
+// CPU structure
 type CPU struct {
 	/// Accumulator register
 	a r8
@@ -234,7 +234,35 @@ func (c *CPU) initOpcodes() {
 	opcodes[0xad] = opcode{"JSR", func() { c.jsr(c.indexed()) }, 7, indexed}
 	opcodes[0xae] = opcode{"LDX", func() { c.ldx(c.indexed()) }, 5, indexed}
 	opcodes[0xaf] = opcode{"STX", func() { c.stx(c.indexed()) }, 5, indexed}
-
+	opcodes[0xb0] = opcode{"SUBA", func() { c.suba(c.extended()) }, 5, extended}
+	opcodes[0xb1] = opcode{"CMPA", func() { c.cmpa(c.extended()) }, 5, extended}
+	opcodes[0xb2] = opcode{"SBCA", func() { c.sbca(c.extended()) }, 5, extended}
+	opcodes[0xb3] = opcode{"SUBD", func() { c.subd(c.extended()) }, 7, extended}
+	opcodes[0xb4] = opcode{"ANDA", func() { c.anda(c.extended()) }, 5, extended}
+	opcodes[0xb5] = opcode{"BITA", func() { c.bita(c.extended()) }, 5, extended}
+	opcodes[0xb6] = opcode{"LDA", func() { c.lda(c.extended()) }, 5, extended}
+	opcodes[0xb7] = opcode{"STA", func() { c.sta(c.extended()) }, 5, extended}
+	opcodes[0xb8] = opcode{"EORA", func() { c.eora(c.extended()) }, 5, extended}
+	opcodes[0xb9] = opcode{"ADCA", func() { c.adca(c.extended()) }, 5, extended}
+	opcodes[0xba] = opcode{"ORA", func() { c.ora(c.extended()) }, 5, extended}
+	opcodes[0xbb] = opcode{"ADDA", func() { c.adda(c.extended()) }, 5, extended}
+	opcodes[0xbc] = opcode{"CMPX", func() { c.cmpx(c.extended()) }, 7, extended}
+	opcodes[0xbd] = opcode{"JSR", func() { c.jsr(c.extended()) }, 8, extended}
+	opcodes[0xbe] = opcode{"LDX", func() { c.ldx(c.extended()) }, 6, extended}
+	opcodes[0xbf] = opcode{"STX", func() { c.stx(c.extended()) }, 6, extended}
+	opcodes[0xc0] = opcode{"SUBB", func() { c.subb(c.immediate()) }, 2, immediate}
+	opcodes[0xc1] = opcode{"CMPB", func() { c.cmpb(c.immediate()) }, 2, immediate}
+	opcodes[0xc2] = opcode{"SBCB", func() { c.sbcb(c.immediate()) }, 2, immediate}
+	opcodes[0xc3] = opcode{"ADDD", func() { c.addd(c.limmediate()) }, 4, limmediate}
+	opcodes[0xc4] = opcode{"ANDB", func() { c.andb(c.immediate()) }, 2, immediate}
+	opcodes[0xc5] = opcode{"BITB", func() { c.bitb(c.immediate()) }, 2, immediate}
+	opcodes[0xc6] = opcode{"LDB", func() { c.ldb(c.immediate()) }, 2, immediate}
+	opcodes[0xc8] = opcode{"EORB", func() { c.eorb(c.immediate()) }, 2, immediate}
+	opcodes[0xc9] = opcode{"ADCB", func() { c.adcb(c.immediate()) }, 2, immediate}
+	opcodes[0xca] = opcode{"ORB", func() { c.orb(c.immediate()) }, 2, immediate}
+	opcodes[0xcb] = opcode{"ADDB", func() { c.addb(c.immediate()) }, 2, immediate}
+	opcodes[0xcc] = opcode{"LDD", func() { c.ldd(c.limmediate()) }, 3, limmediate}
+	opcodes[0xce] = opcode{"LDU", func() { c.ldu(c.limmediate()) }, 3, limmediate}
 }
 
 func (c *CPU) step() uint64 {
@@ -394,7 +422,6 @@ func (c *CPU) ror(address uint16) {
 /** Rotate Right Register A - NxZxCx */
 func (c *CPU) rora() {
 	c.a.set(c.ror_(c.a.get()))
-
 }
 
 /** Rotate Right Register B - NxZxCx */
@@ -1103,6 +1130,12 @@ func (c *CPU) suba(address uint16) {
 	c.a.set(c.sub_(c.a.get(), value))
 }
 
+/** Subtract Memory from Register B - H?NxZxVxCx */
+func (c *CPU) subb(address uint16) {
+	value := c.readInt(address)
+	c.b.set(c.sub_(c.b.get(), value))
+}
+
 /** Subtract Memory from Register D - H?NxZxVxCx */
 func (c *CPU) subd(address uint16) {
 	value := c.readwInt(address)
@@ -1117,6 +1150,12 @@ func (c *CPU) cmpa(address uint16) {
 	c.sub_(c.a.get(), value)
 }
 
+/** Compare Memory from Register B - H?NxZxVxCx */
+func (c *CPU) cmpb(address uint16) {
+	value := c.readInt(address)
+	c.sub_(c.b.get(), value)
+}
+
 /** Compare Memory from Register X - NxZxVxCx */
 func (c *CPU) cmpx(address uint16) {
 	value := c.readwInt(address)
@@ -1129,6 +1168,12 @@ func (c *CPU) sbca(address uint16) {
 	c.a.set(c.sbc_(c.a.get(), value))
 }
 
+/** Compare Memory from Register B - H?NxZxVxCx */
+func (c *CPU) sbcb(address uint16) {
+	value := c.readInt(address)
+	c.b.set(c.sbc_(c.b.get(), value))
+}
+
 /** Logical AND Memory into Register - NxZxV0 */
 func (c *CPU) and_(reg int, value int) int {
 	tmp := reg & value
@@ -1137,19 +1182,31 @@ func (c *CPU) and_(reg int, value int) int {
 	return tmp
 }
 
-/** Logical AND Memory into Register - NxZxV0 */
+/** Logical AND Memory into Register A - NxZxV0 */
 func (c *CPU) anda(address uint16) {
 	value := c.readInt(address)
 	c.a.set(c.and_(c.a.get(), value))
 }
 
-/** Logical AND Memory and Register - NxZxV0 */
+/** Logical AND Memory into Register B - NxZxV0 */
+func (c *CPU) andb(address uint16) {
+	value := c.readInt(address)
+	c.b.set(c.and_(c.b.get(), value))
+}
+
+/** Logical AND Memory and Register A - NxZxV0 */
 func (c *CPU) bita(address uint16) {
 	value := c.readInt(address)
 	c.and_(c.a.get(), value)
 }
 
-/** Load Register from Memory - NxZxV0 */
+/** Logical AND Memory and Register B - NxZxV0 */
+func (c *CPU) bitb(address uint16) {
+	value := c.readInt(address)
+	c.and_(c.b.get(), value)
+}
+
+/** Load Register A from Memory - NxZxV0 */
 func (c *CPU) lda(address uint16) {
 	value := c.readInt(address)
 	c.updateNZ(value)
@@ -1157,7 +1214,24 @@ func (c *CPU) lda(address uint16) {
 	c.a.set(value)
 }
 
-/** Load Register from Memory - NxZxV0 */
+/** Load Register B from Memory - NxZxV0 */
+func (c *CPU) ldb(address uint16) {
+	value := c.readInt(address)
+	c.updateNZ(value)
+	c.cc.clearV()
+	c.b.set(value)
+}
+
+/** Load Register D from Memory - NxZxV0 */
+func (c *CPU) ldd(address uint16) {
+	value := c.readwInt(address)
+	c.updateNZ16(value)
+	c.cc.clearV()
+	c.a.set(value >> 8)
+	c.b.set(value & 0xff)
+}
+
+/** Load Register X from Memory - NxZxV0 */
 func (c *CPU) ldx(address uint16) {
 	value := c.readwInt(address)
 	c.updateNZ16(value)
@@ -1165,7 +1239,15 @@ func (c *CPU) ldx(address uint16) {
 	c.x.set(value)
 }
 
-/** Exclusive OR - NxZxV0 */
+/** Load Register U from Memory - NxZxV0 */
+func (c *CPU) ldu(address uint16) {
+	value := c.readwInt(address)
+	c.updateNZ16(value)
+	c.cc.clearV()
+	c.u.set(value)
+}
+
+/** Exclusive OR into Register - NxZxV0 */
 func (c *CPU) eor_(reg int, value int) int {
 	tmp := reg ^ value
 	c.updateNZ(tmp)
@@ -1173,10 +1255,16 @@ func (c *CPU) eor_(reg int, value int) int {
 	return tmp
 }
 
-/** Exclusive OR - NxZxV0 */
+/** Exclusive OR into Register A - NxZxV0 */
 func (c *CPU) eora(address uint16) {
 	value := c.readInt(address)
 	c.a.set(c.eor_(c.a.get(), value))
+}
+
+/** Exclusive OR into Register B - NxZxV0 */
+func (c *CPU) eorb(address uint16) {
+	value := c.readInt(address)
+	c.b.set(c.eor_(c.b.get(), value))
 }
 
 /** Inclusive OR Memory into Register - NxZxV0 */
@@ -1187,10 +1275,16 @@ func (c *CPU) or_(reg int, value int) int {
 	return tmp
 }
 
-/** Inclusive OR Memory into Register - NxZxV0 */
+/** Inclusive OR Memory into Register A - NxZxV0 */
 func (c *CPU) ora(address uint16) {
 	value := c.readInt(address)
 	c.a.set(c.or_(c.a.get(), value))
+}
+
+/** Inclusive OR Memory into Register B - NxZxV0 */
+func (c *CPU) orb(address uint16) {
+	value := c.readInt(address)
+	c.b.set(c.or_(c.b.get(), value))
 }
 
 /** Add with Carry into Register - HxNxZxVxCx */
@@ -1204,10 +1298,16 @@ func (c *CPU) adc_(reg int, value int) int {
 	return tmp
 }
 
-/** Add with Carry into Register - HxNxZxVxCx */
+/** Add with Carry into Register A - HxNxZxVxCx */
 func (c *CPU) adca(address uint16) {
 	value := c.readInt(address)
 	c.a.set(c.adc_(c.a.get(), value))
+}
+
+/** Add with Carry into Register B - HxNxZxVxCx */
+func (c *CPU) adcb(address uint16) {
+	value := c.readInt(address)
+	c.b.set(c.adc_(c.b.get(), value))
 }
 
 /** Add Memory into Register - HxNxZxVxCx */
@@ -1218,9 +1318,30 @@ func (c *CPU) add_(reg int, value int) int {
 }
 
 /** Add Memory into Register - HxNxZxVxCx */
+func (c *CPU) add16_(reg int, value int) int {
+	tmp := reg + value
+	c.updateNZVC16(reg, value, tmp)
+	return tmp
+}
+
+/** Add Memory into Register A - HxNxZxVxCx */
 func (c *CPU) adda(address uint16) {
 	value := c.readInt(address)
 	c.a.set(c.add_(c.a.get(), value))
+}
+
+/** Add Memory into Register B - HxNxZxVxCx */
+func (c *CPU) addb(address uint16) {
+	value := c.readInt(address)
+	c.b.set(c.add_(c.b.get(), value))
+}
+
+/** Add Memory into Register D - HxNxZxVxCx */
+func (c *CPU) addd(address uint16) {
+	value := c.readwInt(address)
+	res := c.add16_(int(c.d()), value)
+	c.a.set(res >> 8)
+	c.b.set(res & 0xff)
 }
 
 /** Store Register A into Memory - NxZxV0 */
