@@ -3,8 +3,10 @@ package core
 import "fmt"
 
 type opcode struct {
+	name   string
 	f      func()
 	cycles uint64
+	mode   addressMode
 }
 
 var (
@@ -23,20 +25,20 @@ const (
 	none      = 0
 )
 
-/*
-const (
-	_ = iota
-	Direct
-	Inherent
-	Immediate
-	Limmediate
-	Relative
-	Lrelative
-	Extended
-	Indexed
-) */
-
 /* Addressing modes */
+
+type addressMode int
+
+const (
+	inherent   addressMode = 0
+	direct     addressMode = 1
+	immediate  addressMode = 2
+	limmediate addressMode = 3
+	relative   addressMode = 4
+	lrelative  addressMode = 5
+	extended   addressMode = 6
+	indexed    addressMode = 7
+)
 
 // Cpu structure
 type CPU struct {
@@ -89,144 +91,172 @@ func (c *CPU) Reset() {
 }
 
 func (c *CPU) initOpcodes() {
-	opcodes[0x00] = opcode{func() { c.neg(c.direct()) }, 6}
-	opcodes[0x03] = opcode{func() { c.com(c.direct()) }, 6}
-	opcodes[0x04] = opcode{func() { c.lsr(c.direct()) }, 6}
-	opcodes[0x06] = opcode{func() { c.ror(c.direct()) }, 6}
-	opcodes[0x07] = opcode{func() { c.asr(c.direct()) }, 6}
-	opcodes[0x08] = opcode{func() { c.asl(c.direct()) }, 6}
-	opcodes[0x09] = opcode{func() { c.rol(c.direct()) }, 6}
-	opcodes[0x0a] = opcode{func() { c.dec(c.direct()) }, 6}
-	opcodes[0x0c] = opcode{func() { c.inc(c.direct()) }, 6}
-	opcodes[0x0d] = opcode{func() { c.tst(c.direct()) }, 6}
-	opcodes[0x0e] = opcode{func() { c.jmp(c.direct()) }, 3}
-	opcodes[0x0f] = opcode{func() { c.clr(c.direct()) }, 6}
-	opcodes[0x12] = opcode{func() { c.nop() }, 2}
-	opcodes[0x13] = opcode{func() { c.sync() }, 4}
-	opcodes[0x16] = opcode{func() { c.bra(c.lrelative()) }, 5}
-	opcodes[0x17] = opcode{func() { c.bsr(c.lrelative()) }, 9}
-	opcodes[0x19] = opcode{func() { c.daa() }, 2}
-	opcodes[0x1a] = opcode{func() { c.orcc(c.immediate()) }, 3}
-	opcodes[0x1c] = opcode{func() { c.andcc(c.immediate()) }, 3}
-	opcodes[0x1d] = opcode{func() { c.sex() }, 2}
-	opcodes[0x1e] = opcode{func() { c.exg(c.immediate()) }, 8}
-	opcodes[0x1f] = opcode{func() { c.tfr(c.immediate()) }, 6}
-	opcodes[0x20] = opcode{func() { c.bra(c.relative()) }, 3}
-	opcodes[0x21] = opcode{func() { c.brn(c.relative()) }, 3}
-	opcodes[0x22] = opcode{func() { c.bhi(c.relative()) }, 3}
-	opcodes[0x23] = opcode{func() { c.bls(c.relative()) }, 3}
-	opcodes[0x24] = opcode{func() { c.bcc(c.relative()) }, 3}
-	opcodes[0x25] = opcode{func() { c.blo(c.relative()) }, 3}
-	opcodes[0x26] = opcode{func() { c.bne(c.relative()) }, 3}
-	opcodes[0x27] = opcode{func() { c.beq(c.relative()) }, 3}
-	opcodes[0x28] = opcode{func() { c.bvc(c.relative()) }, 3}
-	opcodes[0x29] = opcode{func() { c.bvs(c.relative()) }, 3}
-	opcodes[0x2a] = opcode{func() { c.bpl(c.relative()) }, 3}
-	opcodes[0x2b] = opcode{func() { c.bmi(c.relative()) }, 3}
-	opcodes[0x2c] = opcode{func() { c.bge(c.relative()) }, 3}
-	opcodes[0x2d] = opcode{func() { c.blt(c.relative()) }, 3}
-	opcodes[0x2e] = opcode{func() { c.bgt(c.relative()) }, 3}
-	opcodes[0x2f] = opcode{func() { c.ble(c.relative()) }, 3}
-	opcodes[0x30] = opcode{func() { c.leax(c.indexed()) }, 4}
-	opcodes[0x31] = opcode{func() { c.leay(c.indexed()) }, 4}
-	opcodes[0x32] = opcode{func() { c.leas(c.indexed()) }, 4}
-	opcodes[0x33] = opcode{func() { c.leau(c.indexed()) }, 4}
-	opcodes[0x34] = opcode{func() { c.pshs(c.immediate()) }, 5}
-	opcodes[0x35] = opcode{func() { c.puls(c.immediate()) }, 5}
-	opcodes[0x36] = opcode{func() { c.pshu(c.immediate()) }, 5}
-	opcodes[0x37] = opcode{func() { c.pulu(c.immediate()) }, 5}
-	opcodes[0x39] = opcode{func() { c.rts() }, 5}
-	opcodes[0x3a] = opcode{func() { c.abx() }, 3}
-	opcodes[0x3b] = opcode{func() { c.rti() }, 3}
-	opcodes[0x3d] = opcode{func() { c.mul() }, 11}
-	opcodes[0x3f] = opcode{func() { c.swi() }, 7}
-	opcodes[0x40] = opcode{func() { c.nega() }, 2}
-	opcodes[0x43] = opcode{func() { c.coma() }, 2}
-	opcodes[0x44] = opcode{func() { c.lsra() }, 2}
-	opcodes[0x46] = opcode{func() { c.rora() }, 2}
-	opcodes[0x47] = opcode{func() { c.asra() }, 2}
-	opcodes[0x48] = opcode{func() { c.asla() }, 2}
-	opcodes[0x49] = opcode{func() { c.rola() }, 2}
-	opcodes[0x4a] = opcode{func() { c.deca() }, 2}
-	opcodes[0x4c] = opcode{func() { c.inca() }, 2}
-	opcodes[0x4d] = opcode{func() { c.tsta() }, 2}
-	opcodes[0x4f] = opcode{func() { c.clra() }, 2}
-	opcodes[0x50] = opcode{func() { c.negb() }, 2}
-	opcodes[0x53] = opcode{func() { c.comb() }, 2}
-	opcodes[0x54] = opcode{func() { c.lsrb() }, 2}
-	opcodes[0x56] = opcode{func() { c.rorb() }, 2}
-	opcodes[0x57] = opcode{func() { c.asrb() }, 2}
-	opcodes[0x58] = opcode{func() { c.aslb() }, 2}
-	opcodes[0x59] = opcode{func() { c.rolb() }, 2}
-	opcodes[0x5a] = opcode{func() { c.decb() }, 2}
-	opcodes[0x5c] = opcode{func() { c.incb() }, 2}
-	opcodes[0x5d] = opcode{func() { c.tstb() }, 2}
-	opcodes[0x5f] = opcode{func() { c.clrb() }, 2}
-	opcodes[0x60] = opcode{func() { c.neg(c.indexed()) }, 6}
-	opcodes[0x63] = opcode{func() { c.com(c.indexed()) }, 6}
-	opcodes[0x64] = opcode{func() { c.lsr(c.indexed()) }, 6}
-	opcodes[0x66] = opcode{func() { c.ror(c.indexed()) }, 6}
-	opcodes[0x67] = opcode{func() { c.asr(c.indexed()) }, 6}
-	opcodes[0x68] = opcode{func() { c.asl(c.indexed()) }, 6}
-	opcodes[0x69] = opcode{func() { c.rol(c.indexed()) }, 6}
-	opcodes[0x6a] = opcode{func() { c.dec(c.indexed()) }, 6}
-	opcodes[0x6c] = opcode{func() { c.inc(c.indexed()) }, 6}
-	opcodes[0x6d] = opcode{func() { c.tst(c.indexed()) }, 6}
-	opcodes[0x6e] = opcode{func() { c.jmp(c.indexed()) }, 3}
-	opcodes[0x6f] = opcode{func() { c.clr(c.indexed()) }, 6}
-	opcodes[0x70] = opcode{func() { c.neg(c.extended()) }, 7}
-	opcodes[0x73] = opcode{func() { c.com(c.extended()) }, 7}
-	opcodes[0x74] = opcode{func() { c.lsr(c.extended()) }, 7}
-	opcodes[0x76] = opcode{func() { c.ror(c.extended()) }, 7}
-	opcodes[0x77] = opcode{func() { c.asr(c.extended()) }, 7}
-	opcodes[0x78] = opcode{func() { c.asl(c.extended()) }, 7}
-	opcodes[0x79] = opcode{func() { c.rol(c.extended()) }, 7}
-	opcodes[0x7a] = opcode{func() { c.dec(c.extended()) }, 7}
-	opcodes[0x7c] = opcode{func() { c.inc(c.extended()) }, 7}
-	opcodes[0x7d] = opcode{func() { c.tst(c.extended()) }, 7}
-	opcodes[0x7e] = opcode{func() { c.jmp(c.extended()) }, 4}
-	opcodes[0x7f] = opcode{func() { c.clr(c.extended()) }, 7}
-	opcodes[0x80] = opcode{func() { c.suba(c.immediate()) }, 2}
-	opcodes[0x81] = opcode{func() { c.cmpa(c.immediate()) }, 2}
-	opcodes[0x82] = opcode{func() { c.sbca(c.immediate()) }, 2}
-	opcodes[0x83] = opcode{func() { c.subd(c.limmediate()) }, 4}
-	opcodes[0x84] = opcode{func() { c.anda(c.immediate()) }, 2}
-	opcodes[0x85] = opcode{func() { c.bita(c.immediate()) }, 2}
-	opcodes[0x86] = opcode{func() { c.lda(c.immediate()) }, 2}
-	opcodes[0x88] = opcode{func() { c.eora(c.immediate()) }, 2}
-	opcodes[0x89] = opcode{func() { c.adca(c.immediate()) }, 2}
-	opcodes[0x8a] = opcode{func() { c.ora(c.immediate()) }, 2}
-	opcodes[0x8b] = opcode{func() { c.adda(c.immediate()) }, 2}
-	opcodes[0x8c] = opcode{func() { c.cmpx(c.limmediate()) }, 4}
-	opcodes[0x8d] = opcode{func() { c.bsr(c.relative()) }, 7}
-	opcodes[0x8e] = opcode{func() { c.ldx(c.limmediate()) }, 3}
-	opcodes[0x90] = opcode{func() { c.suba(c.direct()) }, 4}
-	opcodes[0x91] = opcode{func() { c.cmpa(c.direct()) }, 4}
-	opcodes[0x92] = opcode{func() { c.sbca(c.direct()) }, 4}
-	opcodes[0x93] = opcode{func() { c.subd(c.direct()) }, 6}
-	opcodes[0x94] = opcode{func() { c.anda(c.direct()) }, 4}
-	opcodes[0x95] = opcode{func() { c.bita(c.direct()) }, 4}
-	opcodes[0x96] = opcode{func() { c.lda(c.direct()) }, 4}
-	opcodes[0x97] = opcode{func() { c.sta(c.direct()) }, 4}
-	opcodes[0x98] = opcode{func() { c.eora(c.direct()) }, 4}
-	opcodes[0x99] = opcode{func() { c.adca(c.direct()) }, 4}
-	opcodes[0x9a] = opcode{func() { c.ora(c.direct()) }, 4}
-	opcodes[0x9b] = opcode{func() { c.adda(c.direct()) }, 4}
-	opcodes[0x9c] = opcode{func() { c.cmpx(c.direct()) }, 7}
-	opcodes[0x9d] = opcode{func() { c.jsr(c.direct()) }, 7}
-	opcodes[0x9e] = opcode{func() { c.ldx(c.direct()) }, 5}
-	opcodes[0x9f] = opcode{func() { c.stx(c.direct()) }, 5}
+	opcodes[0x00] = opcode{"NEG", func() { c.neg(c.direct()) }, 6, direct}
+	opcodes[0x03] = opcode{"COM", func() { c.com(c.direct()) }, 6, direct}
+	opcodes[0x04] = opcode{"LSR", func() { c.lsr(c.direct()) }, 6, direct}
+	opcodes[0x06] = opcode{"ROR", func() { c.ror(c.direct()) }, 6, direct}
+	opcodes[0x07] = opcode{"ASR", func() { c.asr(c.direct()) }, 6, direct}
+	opcodes[0x08] = opcode{"ASL", func() { c.asl(c.direct()) }, 6, direct}
+	opcodes[0x09] = opcode{"ROL", func() { c.rol(c.direct()) }, 6, direct}
+	opcodes[0x0a] = opcode{"DEC", func() { c.dec(c.direct()) }, 6, direct}
+	opcodes[0x0c] = opcode{"INC", func() { c.inc(c.direct()) }, 6, direct}
+	opcodes[0x0d] = opcode{"TST", func() { c.tst(c.direct()) }, 6, direct}
+	opcodes[0x0e] = opcode{"JMP", func() { c.jmp(c.direct()) }, 3, direct}
+	opcodes[0x0f] = opcode{"CLR", func() { c.clr(c.direct()) }, 6, direct}
+	opcodes[0x12] = opcode{"NOP", func() { c.nop() }, 2, inherent}
+	opcodes[0x13] = opcode{"SYNC", func() { c.sync() }, 4, inherent}
+	opcodes[0x16] = opcode{"BRA", func() { c.bra(c.lrelative()) }, 5, lrelative}
+	opcodes[0x17] = opcode{"BSR", func() { c.bsr(c.lrelative()) }, 9, lrelative}
+	opcodes[0x19] = opcode{"DAA", func() { c.daa() }, 2, inherent}
+	opcodes[0x1a] = opcode{"ORCC", func() { c.orcc(c.immediate()) }, 3, immediate}
+	opcodes[0x1c] = opcode{"ANDCC", func() { c.andcc(c.immediate()) }, 3, immediate}
+	opcodes[0x1d] = opcode{"SEX", func() { c.sex() }, 2, inherent}
+	opcodes[0x1e] = opcode{"EXG", func() { c.exg(c.immediate()) }, 8, immediate}
+	opcodes[0x1f] = opcode{"TFR", func() { c.tfr(c.immediate()) }, 6, immediate}
+	opcodes[0x20] = opcode{"BRA", func() { c.bra(c.relative()) }, 3, relative}
+	opcodes[0x21] = opcode{"BRN", func() { c.brn(c.relative()) }, 3, relative}
+	opcodes[0x22] = opcode{"BHI", func() { c.bhi(c.relative()) }, 3, relative}
+	opcodes[0x23] = opcode{"BLS", func() { c.bls(c.relative()) }, 3, relative}
+	opcodes[0x24] = opcode{"BCC", func() { c.bcc(c.relative()) }, 3, relative}
+	opcodes[0x25] = opcode{"BLO", func() { c.blo(c.relative()) }, 3, relative}
+	opcodes[0x26] = opcode{"BNE", func() { c.bne(c.relative()) }, 3, relative}
+	opcodes[0x27] = opcode{"BEQ", func() { c.beq(c.relative()) }, 3, relative}
+	opcodes[0x28] = opcode{"BVC", func() { c.bvc(c.relative()) }, 3, relative}
+	opcodes[0x29] = opcode{"BVS", func() { c.bvs(c.relative()) }, 3, relative}
+	opcodes[0x2a] = opcode{"BPL", func() { c.bpl(c.relative()) }, 3, relative}
+	opcodes[0x2b] = opcode{"BMI", func() { c.bmi(c.relative()) }, 3, relative}
+	opcodes[0x2c] = opcode{"BGE", func() { c.bge(c.relative()) }, 3, relative}
+	opcodes[0x2d] = opcode{"BLT", func() { c.blt(c.relative()) }, 3, relative}
+	opcodes[0x2e] = opcode{"BGT", func() { c.bgt(c.relative()) }, 3, relative}
+	opcodes[0x2f] = opcode{"BLE", func() { c.ble(c.relative()) }, 3, relative}
+	opcodes[0x30] = opcode{"LEAX", func() { c.leax(c.indexed()) }, 4, indexed}
+	opcodes[0x31] = opcode{"LEAY", func() { c.leay(c.indexed()) }, 4, indexed}
+	opcodes[0x32] = opcode{"LEAS", func() { c.leas(c.indexed()) }, 4, indexed}
+	opcodes[0x33] = opcode{"LEAU", func() { c.leau(c.indexed()) }, 4, indexed}
+	opcodes[0x34] = opcode{"PSHS", func() { c.pshs(c.immediate()) }, 5, immediate}
+	opcodes[0x35] = opcode{"PULS", func() { c.puls(c.immediate()) }, 5, immediate}
+	opcodes[0x36] = opcode{"PSHU", func() { c.pshu(c.immediate()) }, 5, immediate}
+	opcodes[0x37] = opcode{"PULU", func() { c.pulu(c.immediate()) }, 5, immediate}
+	opcodes[0x39] = opcode{"RTS", func() { c.rts() }, 5, inherent}
+	opcodes[0x3a] = opcode{"ABX", func() { c.abx() }, 3, inherent}
+	opcodes[0x3b] = opcode{"RTI", func() { c.rti() }, 3, inherent}
+	opcodes[0x3d] = opcode{"MUL", func() { c.mul() }, 11, inherent}
+	opcodes[0x3f] = opcode{"SWI", func() { c.swi() }, 7, inherent}
+	opcodes[0x40] = opcode{"NEGA", func() { c.nega() }, 2, inherent}
+	opcodes[0x43] = opcode{"COMA", func() { c.coma() }, 2, inherent}
+	opcodes[0x44] = opcode{"LSRA", func() { c.lsra() }, 2, inherent}
+	opcodes[0x46] = opcode{"RORA", func() { c.rora() }, 2, inherent}
+	opcodes[0x47] = opcode{"ASRA", func() { c.asra() }, 2, inherent}
+	opcodes[0x48] = opcode{"ASLA", func() { c.asla() }, 2, inherent}
+	opcodes[0x49] = opcode{"ROLA", func() { c.rola() }, 2, inherent}
+	opcodes[0x4a] = opcode{"DECA", func() { c.deca() }, 2, inherent}
+	opcodes[0x4c] = opcode{"INCA", func() { c.inca() }, 2, inherent}
+	opcodes[0x4d] = opcode{"TSTA", func() { c.tsta() }, 2, inherent}
+	opcodes[0x4f] = opcode{"CLRA", func() { c.clra() }, 2, inherent}
+	opcodes[0x50] = opcode{"NEGB", func() { c.negb() }, 2, inherent}
+	opcodes[0x53] = opcode{"COMB", func() { c.comb() }, 2, inherent}
+	opcodes[0x54] = opcode{"LSRB", func() { c.lsrb() }, 2, inherent}
+	opcodes[0x56] = opcode{"RORB", func() { c.rorb() }, 2, inherent}
+	opcodes[0x57] = opcode{"ASRB", func() { c.asrb() }, 2, inherent}
+	opcodes[0x58] = opcode{"ASLB", func() { c.aslb() }, 2, inherent}
+	opcodes[0x59] = opcode{"ROLB", func() { c.rolb() }, 2, inherent}
+	opcodes[0x5a] = opcode{"DECB", func() { c.decb() }, 2, inherent}
+	opcodes[0x5c] = opcode{"INCB", func() { c.incb() }, 2, inherent}
+	opcodes[0x5d] = opcode{"TSTB", func() { c.tstb() }, 2, inherent}
+	opcodes[0x5f] = opcode{"CLRB", func() { c.clrb() }, 2, inherent}
+	opcodes[0x60] = opcode{"NEG", func() { c.neg(c.indexed()) }, 6, indexed}
+	opcodes[0x63] = opcode{"COM", func() { c.com(c.indexed()) }, 6, indexed}
+	opcodes[0x64] = opcode{"LSR", func() { c.lsr(c.indexed()) }, 6, indexed}
+	opcodes[0x66] = opcode{"ROR", func() { c.ror(c.indexed()) }, 6, indexed}
+	opcodes[0x67] = opcode{"ASR", func() { c.asr(c.indexed()) }, 6, indexed}
+	opcodes[0x68] = opcode{"ASL", func() { c.asl(c.indexed()) }, 6, indexed}
+	opcodes[0x69] = opcode{"ROL", func() { c.rol(c.indexed()) }, 6, indexed}
+	opcodes[0x6a] = opcode{"DEC", func() { c.dec(c.indexed()) }, 6, indexed}
+	opcodes[0x6c] = opcode{"INC", func() { c.inc(c.indexed()) }, 6, indexed}
+	opcodes[0x6d] = opcode{"TST", func() { c.tst(c.indexed()) }, 6, indexed}
+	opcodes[0x6e] = opcode{"JMP", func() { c.jmp(c.indexed()) }, 3, indexed}
+	opcodes[0x6f] = opcode{"CLR", func() { c.clr(c.indexed()) }, 6, indexed}
+	opcodes[0x70] = opcode{"NEG", func() { c.neg(c.extended()) }, 7, extended}
+	opcodes[0x73] = opcode{"COM", func() { c.com(c.extended()) }, 7, extended}
+	opcodes[0x74] = opcode{"LSR", func() { c.lsr(c.extended()) }, 7, extended}
+	opcodes[0x76] = opcode{"ROR", func() { c.ror(c.extended()) }, 7, extended}
+	opcodes[0x77] = opcode{"ASR", func() { c.asr(c.extended()) }, 7, extended}
+	opcodes[0x78] = opcode{"ASL", func() { c.asl(c.extended()) }, 7, extended}
+	opcodes[0x79] = opcode{"ROL", func() { c.rol(c.extended()) }, 7, extended}
+	opcodes[0x7a] = opcode{"DEC", func() { c.dec(c.extended()) }, 7, extended}
+	opcodes[0x7c] = opcode{"INC", func() { c.inc(c.extended()) }, 7, extended}
+	opcodes[0x7d] = opcode{"TST", func() { c.tst(c.extended()) }, 7, extended}
+	opcodes[0x7e] = opcode{"JMP", func() { c.jmp(c.extended()) }, 4, extended}
+	opcodes[0x7f] = opcode{"CLR", func() { c.clr(c.extended()) }, 7, extended}
+	opcodes[0x80] = opcode{"SUBA", func() { c.suba(c.immediate()) }, 2, immediate}
+	opcodes[0x81] = opcode{"CMPA", func() { c.cmpa(c.immediate()) }, 2, immediate}
+	opcodes[0x82] = opcode{"SBCA", func() { c.sbca(c.immediate()) }, 2, immediate}
+	opcodes[0x83] = opcode{"SUBD", func() { c.subd(c.limmediate()) }, 4, limmediate}
+	opcodes[0x84] = opcode{"ANDA", func() { c.anda(c.immediate()) }, 2, immediate}
+	opcodes[0x85] = opcode{"BITA", func() { c.bita(c.immediate()) }, 2, immediate}
+	opcodes[0x86] = opcode{"LDA", func() { c.lda(c.immediate()) }, 2, immediate}
+	opcodes[0x88] = opcode{"EORA", func() { c.eora(c.immediate()) }, 2, immediate}
+	opcodes[0x89] = opcode{"ADCA", func() { c.adca(c.immediate()) }, 2, immediate}
+	opcodes[0x8a] = opcode{"ORA", func() { c.ora(c.immediate()) }, 2, immediate}
+	opcodes[0x8b] = opcode{"ADDA", func() { c.adda(c.immediate()) }, 2, immediate}
+	opcodes[0x8c] = opcode{"CMPX", func() { c.cmpx(c.limmediate()) }, 4, limmediate}
+	opcodes[0x8d] = opcode{"BSR", func() { c.bsr(c.relative()) }, 7, relative}
+	opcodes[0x8e] = opcode{"LDX", func() { c.ldx(c.limmediate()) }, 3, limmediate}
+	opcodes[0x90] = opcode{"SUBA", func() { c.suba(c.direct()) }, 4, direct}
+	opcodes[0x91] = opcode{"CMPA", func() { c.cmpa(c.direct()) }, 4, direct}
+	opcodes[0x92] = opcode{"SBCA", func() { c.sbca(c.direct()) }, 4, direct}
+	opcodes[0x93] = opcode{"SUBD", func() { c.subd(c.direct()) }, 6, direct}
+	opcodes[0x94] = opcode{"ANDA", func() { c.anda(c.direct()) }, 4, direct}
+	opcodes[0x95] = opcode{"BITA", func() { c.bita(c.direct()) }, 4, direct}
+	opcodes[0x96] = opcode{"LDA", func() { c.lda(c.direct()) }, 4, direct}
+	opcodes[0x97] = opcode{"STA", func() { c.sta(c.direct()) }, 4, direct}
+	opcodes[0x98] = opcode{"EORA", func() { c.eora(c.direct()) }, 4, direct}
+	opcodes[0x99] = opcode{"ADCA", func() { c.adca(c.direct()) }, 4, direct}
+	opcodes[0x9a] = opcode{"ORA", func() { c.ora(c.direct()) }, 4, direct}
+	opcodes[0x9b] = opcode{"ADDA", func() { c.adda(c.direct()) }, 4, direct}
+	opcodes[0x9c] = opcode{"CMPX", func() { c.cmpx(c.direct()) }, 7, direct}
+	opcodes[0x9d] = opcode{"JSR", func() { c.jsr(c.direct()) }, 7, direct}
+	opcodes[0x9e] = opcode{"LDX", func() { c.ldx(c.direct()) }, 5, direct}
+	opcodes[0x9f] = opcode{"STX", func() { c.stx(c.direct()) }, 5, direct}
+	opcodes[0xa0] = opcode{"SUBA", func() { c.suba(c.indexed()) }, 4, indexed}
+	opcodes[0xa1] = opcode{"CMPA", func() { c.cmpa(c.indexed()) }, 4, indexed}
+	opcodes[0xa2] = opcode{"SBCA", func() { c.sbca(c.indexed()) }, 4, indexed}
+	opcodes[0xa3] = opcode{"SUBD", func() { c.subd(c.indexed()) }, 6, indexed}
+	opcodes[0xa4] = opcode{"ANDA", func() { c.anda(c.indexed()) }, 4, indexed}
+	opcodes[0xa5] = opcode{"BITA", func() { c.bita(c.indexed()) }, 4, indexed}
+	opcodes[0xa6] = opcode{"LDA", func() { c.lda(c.indexed()) }, 4, indexed}
+	opcodes[0xa7] = opcode{"STA", func() { c.sta(c.indexed()) }, 4, indexed}
+	opcodes[0xa8] = opcode{"EORA", func() { c.eora(c.indexed()) }, 4, indexed}
+	opcodes[0xa9] = opcode{"ADCA", func() { c.adca(c.indexed()) }, 4, indexed}
+	opcodes[0xaa] = opcode{"ORA", func() { c.ora(c.indexed()) }, 4, indexed}
+	opcodes[0xab] = opcode{"ADDA", func() { c.adda(c.indexed()) }, 4, indexed}
+	opcodes[0xac] = opcode{"CMPX", func() { c.cmpx(c.indexed()) }, 7, indexed}
+	opcodes[0xad] = opcode{"JSR", func() { c.jsr(c.indexed()) }, 7, indexed}
+	opcodes[0xae] = opcode{"LDX", func() { c.ldx(c.indexed()) }, 5, indexed}
+	opcodes[0xaf] = opcode{"STX", func() { c.stx(c.indexed()) }, 5, indexed}
+
 }
 
 func (c *CPU) step() uint64 {
 	opcode := opcodes[c.read(c.pc.uint16())]
-	c.pc.inc()
+
+	instBuf := make([]uint8, 5)
+	instBuf[0] = c.read(c.pc.uint16())
+	instBuf[1] = c.read(c.pc.uint16() + 1)
+	instBuf[2] = c.read(c.pc.uint16() + 2)
+	instBuf[3] = c.read(c.pc.uint16() + 3)
+	instBuf[4] = c.read(c.pc.uint16() + 4)
+
+	// instr, len := Disassemble(opcode, instBuf)
+	// format(c.pc.uint16(), instr, instBuf[0:len])
 
 	/*
 		if c.Verbose {
-			Disassemble(opcode, c, c.ProgramCounter)
+			Disassemble(opcode, instBuf)
 		}
 	*/
+
+	c.pc.inc()
 
 	opcode.f()
 	c.clock += opcode.cycles
