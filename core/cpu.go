@@ -10,7 +10,7 @@ type opcode struct {
 }
 
 var (
-	opcodes [0x300]opcode
+	opcodes map[int]opcode
 )
 
 const (
@@ -91,6 +91,8 @@ func (c *CPU) Reset() {
 }
 
 func (c *CPU) initOpcodes() {
+	opcodes = make(map[int]opcode)
+	// Page 0
 	opcodes[0x00] = opcode{"NEG", func() { c.neg(c.direct()) }, 6, direct}
 	opcodes[0x03] = opcode{"COM", func() { c.com(c.direct()) }, 6, direct}
 	opcodes[0x04] = opcode{"LSR", func() { c.lsr(c.direct()) }, 6, direct}
@@ -214,7 +216,7 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x99] = opcode{"ADCA", func() { c.adca(c.direct()) }, 4, direct}
 	opcodes[0x9a] = opcode{"ORA", func() { c.ora(c.direct()) }, 4, direct}
 	opcodes[0x9b] = opcode{"ADDA", func() { c.adda(c.direct()) }, 4, direct}
-	opcodes[0x9c] = opcode{"CMPX", func() { c.cmpx(c.direct()) }, 7, direct}
+	opcodes[0x9c] = opcode{"CMPX", func() { c.cmpx(c.direct()) }, 6, direct}
 	opcodes[0x9d] = opcode{"JSR", func() { c.jsr(c.direct()) }, 7, direct}
 	opcodes[0x9e] = opcode{"LDX", func() { c.ldx(c.direct()) }, 5, direct}
 	opcodes[0x9f] = opcode{"STX", func() { c.stx(c.direct()) }, 5, direct}
@@ -230,7 +232,7 @@ func (c *CPU) initOpcodes() {
 	opcodes[0xa9] = opcode{"ADCA", func() { c.adca(c.indexed()) }, 4, indexed}
 	opcodes[0xaa] = opcode{"ORA", func() { c.ora(c.indexed()) }, 4, indexed}
 	opcodes[0xab] = opcode{"ADDA", func() { c.adda(c.indexed()) }, 4, indexed}
-	opcodes[0xac] = opcode{"CMPX", func() { c.cmpx(c.indexed()) }, 7, indexed}
+	opcodes[0xac] = opcode{"CMPX", func() { c.cmpx(c.indexed()) }, 6, indexed}
 	opcodes[0xad] = opcode{"JSR", func() { c.jsr(c.indexed()) }, 7, indexed}
 	opcodes[0xae] = opcode{"LDX", func() { c.ldx(c.indexed()) }, 5, indexed}
 	opcodes[0xaf] = opcode{"STX", func() { c.stx(c.indexed()) }, 5, indexed}
@@ -263,10 +265,69 @@ func (c *CPU) initOpcodes() {
 	opcodes[0xcb] = opcode{"ADDB", func() { c.addb(c.immediate()) }, 2, immediate}
 	opcodes[0xcc] = opcode{"LDD", func() { c.ldd(c.limmediate()) }, 3, limmediate}
 	opcodes[0xce] = opcode{"LDU", func() { c.ldu(c.limmediate()) }, 3, limmediate}
+	opcodes[0xd0] = opcode{"SUBB", func() { c.subb(c.direct()) }, 4, direct}
+	opcodes[0xd1] = opcode{"CMPB", func() { c.cmpb(c.direct()) }, 4, direct}
+	opcodes[0xd2] = opcode{"SBCB", func() { c.sbcb(c.direct()) }, 4, direct}
+	opcodes[0xd3] = opcode{"ADDD", func() { c.addd(c.direct()) }, 6, direct}
+	opcodes[0xd4] = opcode{"ANDB", func() { c.andb(c.direct()) }, 4, direct}
+	opcodes[0xd5] = opcode{"BITB", func() { c.bitb(c.direct()) }, 4, direct}
+	opcodes[0xd6] = opcode{"LDB", func() { c.ldb(c.direct()) }, 4, direct}
+	opcodes[0xd7] = opcode{"STB", func() { c.stb(c.direct()) }, 4, direct}
+	opcodes[0xd8] = opcode{"EORB", func() { c.eorb(c.direct()) }, 4, direct}
+	opcodes[0xd9] = opcode{"ADCB", func() { c.adcb(c.direct()) }, 4, direct}
+	opcodes[0xda] = opcode{"ORB", func() { c.orb(c.direct()) }, 4, direct}
+	opcodes[0xdb] = opcode{"ADDB", func() { c.addb(c.direct()) }, 4, direct}
+	opcodes[0xdc] = opcode{"LDD", func() { c.ldd(c.direct()) }, 5, direct}
+	opcodes[0xdd] = opcode{"STD", func() { c.std(c.direct()) }, 5, direct}
+	opcodes[0xde] = opcode{"LDU", func() { c.ldu(c.direct()) }, 5, direct}
+	opcodes[0xdf] = opcode{"STU", func() { c.stu(c.direct()) }, 5, direct}
+	opcodes[0xe0] = opcode{"SUBB", func() { c.subb(c.indexed()) }, 4, indexed}
+	opcodes[0xe1] = opcode{"CMPB", func() { c.cmpb(c.indexed()) }, 4, indexed}
+	opcodes[0xe2] = opcode{"SBCB", func() { c.sbcb(c.indexed()) }, 4, indexed}
+	opcodes[0xe3] = opcode{"ADDD", func() { c.addd(c.indexed()) }, 6, indexed}
+	opcodes[0xe4] = opcode{"ANDB", func() { c.andb(c.indexed()) }, 4, indexed}
+	opcodes[0xe5] = opcode{"BITB", func() { c.bitb(c.indexed()) }, 4, indexed}
+	opcodes[0xe6] = opcode{"LDB", func() { c.ldb(c.indexed()) }, 4, indexed}
+	opcodes[0xe7] = opcode{"STB", func() { c.stb(c.indexed()) }, 4, indexed}
+	opcodes[0xe8] = opcode{"EORB", func() { c.eorb(c.indexed()) }, 4, indexed}
+	opcodes[0xe9] = opcode{"ADCB", func() { c.adcb(c.indexed()) }, 4, indexed}
+	opcodes[0xea] = opcode{"ORB", func() { c.orb(c.indexed()) }, 4, indexed}
+	opcodes[0xeb] = opcode{"ADDB", func() { c.addb(c.indexed()) }, 4, indexed}
+	opcodes[0xec] = opcode{"LDD", func() { c.ldd(c.indexed()) }, 5, indexed}
+	opcodes[0xed] = opcode{"STD", func() { c.std(c.indexed()) }, 5, indexed}
+	opcodes[0xee] = opcode{"LDU", func() { c.ldu(c.indexed()) }, 5, indexed}
+	opcodes[0xef] = opcode{"STU", func() { c.stu(c.indexed()) }, 5, indexed}
+	opcodes[0xf0] = opcode{"SUBB", func() { c.subb(c.extended()) }, 5, extended}
+	opcodes[0xf1] = opcode{"CMPB", func() { c.cmpb(c.extended()) }, 5, extended}
+	opcodes[0xf2] = opcode{"SBCB", func() { c.sbcb(c.extended()) }, 5, extended}
+	opcodes[0xf3] = opcode{"ADDD", func() { c.addd(c.extended()) }, 7, extended}
+	opcodes[0xf4] = opcode{"ANDB", func() { c.andb(c.extended()) }, 5, extended}
+	opcodes[0xf5] = opcode{"BITB", func() { c.bitb(c.extended()) }, 5, extended}
+	opcodes[0xf6] = opcode{"LDB", func() { c.ldb(c.extended()) }, 5, extended}
+	opcodes[0xf7] = opcode{"STB", func() { c.stb(c.extended()) }, 5, extended}
+	opcodes[0xf8] = opcode{"EORB", func() { c.eorb(c.extended()) }, 5, extended}
+	opcodes[0xf9] = opcode{"ADCB", func() { c.adcb(c.extended()) }, 5, extended}
+	opcodes[0xfa] = opcode{"ORB", func() { c.orb(c.extended()) }, 5, extended}
+	opcodes[0xfb] = opcode{"ADDB", func() { c.addb(c.extended()) }, 5, extended}
+	opcodes[0xfc] = opcode{"LDD", func() { c.ldd(c.extended()) }, 6, extended}
+	opcodes[0xfd] = opcode{"STD", func() { c.std(c.extended()) }, 6, extended}
+	opcodes[0xfe] = opcode{"LDU", func() { c.ldu(c.extended()) }, 6, extended}
+	opcodes[0xff] = opcode{"STU", func() { c.stu(c.extended()) }, 6, extended}
+	// Page 1
+	opcodes[0x1021] = opcode{"LBRN", func() { c.lbrn(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1022] = opcode{"LBHI", func() { c.lbhi(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1023] = opcode{"LBLS", func() { c.lbls(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1024] = opcode{"LBCC", func() { c.lbcc(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1025] = opcode{"LBCS", func() { c.lblo(c.lrelative()) }, 5, lrelative}
 }
 
 func (c *CPU) step() uint64 {
-	opcode := opcodes[c.read(c.pc.uint16())]
+	b := c.readInt(c.pc.uint16())
+	if b == 0x10 { // page 1
+		c.pc.inc()
+		b = 0x1000 + c.readInt(c.pc.uint16())
+	}
+	opcode := opcodes[b]
 
 	instBuf := make([]uint8, 5)
 	instBuf[0] = c.read(c.pc.uint16())
@@ -767,9 +828,22 @@ func (c *CPU) brn(address uint16) {
 	// NOP
 }
 
+/** Branch Never */
+func (c *CPU) lbrn(address uint16) {
+	// NOP
+}
+
 /** Branch if Higher - Branch when Z = 0 && C = 0 */
 func (c *CPU) bhi(address uint16) {
 	if !c.cc.getC() && !c.cc.getZ() {
+		c.pc.set(address)
+	}
+}
+
+/** Branch if Higher - Branch when Z = 0 && C = 0 */
+func (c *CPU) lbhi(address uint16) {
+	if !c.cc.getC() && !c.cc.getZ() {
+		c.clock++
 		c.pc.set(address)
 	}
 }
@@ -781,6 +855,14 @@ func (c *CPU) bls(address uint16) {
 	}
 }
 
+/** Branch on Lower or Same - Branch when Z = 1 || C = 1 */
+func (c *CPU) lbls(address uint16) {
+	if c.cc.getC() || c.cc.getZ() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
 /** Branch on Carry Clear - Branch when C = 0 */
 func (c *CPU) bcc(address uint16) {
 	if !c.cc.getC() {
@@ -788,9 +870,25 @@ func (c *CPU) bcc(address uint16) {
 	}
 }
 
+/** Branch on Carry Clear - Branch when C = 0 */
+func (c *CPU) lbcc(address uint16) {
+	if !c.cc.getC() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
 /** Branch on Lower - Branch when C = 1 */
 func (c *CPU) blo(address uint16) {
 	if c.cc.getC() {
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Lower - Branch when C = 1 */
+func (c *CPU) lblo(address uint16) {
+	if c.cc.getC() {
+		c.clock++
 		c.pc.set(address)
 	}
 }
@@ -1352,9 +1450,33 @@ func (c *CPU) sta(address uint16) {
 	c.cc.clearV()
 }
 
+/** Store Register B into Memory - NxZxV0 */
+func (c *CPU) stb(address uint16) {
+	tmp := c.b.get()
+	c.writeInt(address, tmp)
+	c.updateNZ(tmp)
+	c.cc.clearV()
+}
+
+/** Store Register B into Memory - NxZxV0 */
+func (c *CPU) std(address uint16) {
+	tmp := int(c.d())
+	c.writewInt(address, tmp)
+	c.updateNZ16(tmp)
+	c.cc.clearV()
+}
+
 /** Store Register X into Memory - NxZxV0 */
 func (c *CPU) stx(address uint16) {
 	tmp := c.x.get()
+	c.writewInt(address, tmp)
+	c.updateNZ16(tmp)
+	c.cc.clearV()
+}
+
+/** Store Register U into Memory - NxZxV0 */
+func (c *CPU) stu(address uint16) {
+	tmp := c.u.get()
 	c.writewInt(address, tmp)
 	c.updateNZ16(tmp)
 	c.cc.clearV()

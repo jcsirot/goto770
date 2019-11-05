@@ -481,7 +481,7 @@ var _ = Describe("CPU", func() {
 
 	Context("[CMP]", func() {
 
-		It("[Immediate] should implement CMPA with Immediate addessing mode", func() {
+		It("[Immediate] should implement CMPA", func() {
 			cpu.pc.set(0x1000)
 			cpu.write(0x1000, 0x81) // CMPA
 			cpu.write(0x1001, 0x04)
@@ -494,7 +494,7 @@ var _ = Describe("CPU", func() {
 			ExpectCCR(cpu, "", "NZVC")
 		})
 
-		It("[Immediate] should implement CMPA with Immediate addessing mode with bit Z", func() {
+		It("[Immediate] should implement CMPA with bit Z", func() {
 			cpu.pc.set(0x1000)
 			cpu.write(0x1000, 0x81) // CMPA
 			cpu.write(0x1001, 0x06)
@@ -506,11 +506,40 @@ var _ = Describe("CPU", func() {
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "NC", "ZV")
 		})
+
+		It("[Direct] should implement CMPA with bit NC", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0x91) // CMPA
+			cpu.write(0x1001, 0x40)
+			cpu.write(0x2040, 0x02)
+			cpu.a.set(0x01)
+
+			cpu.step()
+
+			ExpectA(cpu, 0x01)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "NC", "ZV")
+		})
+
+		It("[Immediate] should implement CMPB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc1) // CMPB
+			cpu.write(0x1001, 0x04)
+			cpu.b.set(0x3e)
+			cpu.step()
+
+			ExpectB(cpu, 0x3e)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVC")
+		})
 	})
 
 	Context("[SUB]", func() {
 
-		It("[Immediate] should implement SUBA with Immediate addessing mode", func() {
+		It("[Immediate] should implement SUBA", func() {
 			cpu.pc.set(0x1000)
 			cpu.write(0x1000, 0x80) // SUBA
 			cpu.write(0x1001, 0x04)
@@ -523,7 +552,7 @@ var _ = Describe("CPU", func() {
 			ExpectCCR(cpu, "", "NZVC")
 		})
 
-		It("[Immediate] should implement SUBB with Immediate addessing mode", func() {
+		It("[Immediate] should implement SUBB", func() {
 			cpu.pc.set(0x1000)
 			cpu.write(0x1000, 0xc0) // SUBB
 			cpu.write(0x1001, 0x04)
@@ -721,6 +750,36 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "V", "NZC")
+		})
+
+		It("[Direct] should implement SBCA", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x30)
+			cpu.write(0x1000, 0x92) // SBCA
+			cpu.write(0x1001, 0xa0)
+			cpu.write(0x30a0, 0x04)
+			cpu.a.set(0x3e)
+
+			cpu.step()
+
+			ExpectA(cpu, 0x3a)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement SBCB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0xc2) // SBCB
+			cpu.write(0x1001, 0x04)
+			cpu.b.set(0x3e)
+
+			cpu.step()
+
+			ExpectB(cpu, 0x3a)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "", "NZVC")
 		})
 	})
 
@@ -1097,6 +1156,20 @@ var _ = Describe("CPU", func() {
 			ExpectCCR(cpu, "N", "ZV")
 		})
 
+		It("[Direct] should implement LDD", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x3f)
+			cpu.write(0x1000, 0xdc) // LDD
+			cpu.write(0x1001, 0x80)
+			cpu.writew(0x3f80, 0x45ab)
+			cpu.step()
+
+			ExpectD(cpu, 0x45ab)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
 		It("[Immediate] should implement LDU", func() {
 			cpu.pc.set(0x1000)
 			cpu.write(0x1000, 0xce) // LDU
@@ -1132,6 +1205,168 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1003)
 			ExpectClock(cpu, 3)
 			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Direct] should implement LDU", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x55)
+			cpu.write(0x1000, 0xde) // LDU
+			cpu.write(0x1001, 0x20)
+			cpu.writew(0x5520, 0x20b0)
+			cpu.step()
+
+			ExpectU(cpu, 0x20b0)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "", "NZV")
+		})
+	})
+
+	Context("[ST]", func() {
+
+		It("[Direct] should implement STA", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0x97) // STA
+			cpu.write(0x1001, 0x60)
+			cpu.a.set(0x76)
+			cpu.step()
+
+			ExpectMemory(cpu, 0x2060, 0x76)
+			ExpectA(cpu, 0x76)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Direct] should implement STA with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0x97) // STA
+			cpu.write(0x1001, 0x60)
+			cpu.a.set(0x00)
+			cpu.writew(0x2060, 0xff)
+			cpu.step()
+
+			ExpectMemory(cpu, 0x2060, 0x00)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Direct] should implement STA with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0x97) // STA
+			cpu.write(0x1001, 0x60)
+			cpu.a.set(0xba)
+			cpu.step()
+
+			ExpectMemory(cpu, 0x2060, 0xba)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Direct] should implement STB", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0xd7) // STB
+			cpu.write(0x1001, 0x60)
+			cpu.b.set(0x76)
+			cpu.step()
+
+			ExpectMemory(cpu, 0x2060, 0x76)
+			ExpectB(cpu, 0x76)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Direct] should implement STB with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0xd7) // STB
+			cpu.write(0x1001, 0x60)
+			cpu.b.set(0x00)
+			cpu.writew(0x2060, 0xff)
+			cpu.step()
+
+			ExpectMemory(cpu, 0x2060, 0x00)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Direct] should implement STB with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0xd7) // STB
+			cpu.write(0x1001, 0x60)
+			cpu.b.set(0xba)
+			cpu.step()
+
+			ExpectMemory(cpu, 0x2060, 0xba)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Direct] should implement STD", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0xdd) // STD
+			cpu.write(0x1001, 0x60)
+			cpu.a.set(0x58)
+			cpu.b.set(0xb0)
+			cpu.step()
+
+			ExpectWord(cpu, 0x2060, 0x58b0)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Direct] should implement STU", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0xb0)
+			cpu.write(0x1000, 0xdf) // STU
+			cpu.write(0x1001, 0xa0)
+			cpu.u.set(0x19f0)
+			cpu.step()
+
+			ExpectWord(cpu, 0xb0a0, 0x19f0)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Direct] should implement STU with bit N", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0xb0)
+			cpu.write(0x1000, 0xdf) // STU
+			cpu.write(0x1001, 0xa0)
+			cpu.u.set(0xb851)
+			cpu.step()
+
+			ExpectWord(cpu, 0xb0a0, 0xb851)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "N", "ZV")
+		})
+
+		It("[Direct] should implement STU with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0xb0)
+			cpu.write(0x1000, 0xdf) // STU
+			cpu.write(0x1001, 0xa0)
+			cpu.u.set(0x0000)
+			cpu.step()
+
+			ExpectWord(cpu, 0xb0a0, 0x0000)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "Z", "NV")
 		})
 	})
 
@@ -1676,7 +1911,156 @@ var _ = Describe("CPU", func() {
 			ExpectWord(cpu, cpu.s.uint16(), 0x1002)
 			ExpectClock(cpu, 7)
 		})
+	})
 
+	Context("[BR]", func() {
+		ccflags := []struct {
+			flag  string
+			set   func()
+			clear func()
+		}{
+			{"H", cpu.cc.setH, cpu.cc.clearH},
+			{"C", cpu.cc.setC, cpu.cc.clearC},
+			{"N", cpu.cc.setN, cpu.cc.clearN},
+			{"Z", cpu.cc.setZ, cpu.cc.clearZ},
+			{"V", cpu.cc.setV, cpu.cc.clearV},
+		}
+
+		branchingOpcodeTest8 := func(opcode uint8, flags string, branch bool, cycles int) {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, opcode)
+			cpu.write(0x1001, 0x10)
+			for _, ccf := range ccflags {
+				if strings.Contains(flags, ccf.flag) {
+					ccf.set()
+				} else {
+					ccf.clear()
+				}
+			}
+			cpu.step()
+			offset := 0
+			if branch {
+				offset = 0x10
+			}
+			ExpectPC(cpu, 0x1002+offset)
+			ExpectClock(cpu, cycles)
+		}
+
+		branchingOpcodeTest16 := func(opcode uint16, flags string, branch bool, cycles int) {
+			cpu.pc.set(0x1000)
+			cpu.writew(0x1000, opcode)
+			cpu.writew(0x1002, 0x1000)
+			for _, ccf := range ccflags {
+				if strings.Contains(flags, ccf.flag) {
+					ccf.set()
+				} else {
+					ccf.clear()
+				}
+			}
+			cpu.step()
+			offset := 0
+			if branch {
+				offset = 0x1000
+			}
+			ExpectPC(cpu, 0x1004+offset)
+			ExpectClock(cpu, cycles)
+		}
+
+		It("[Relative] should implement BHI C=0 Z=0 (o)", func() {
+			branchingOpcodeTest8(0x22, "", true, 3)
+		})
+
+		It("[Relative] should implement BHI C=1 Z=0 (x)", func() {
+			branchingOpcodeTest8(0x22, "C", false, 3)
+		})
+
+		It("[Relative] should implement BHI C=0 Z=1 (x)", func() {
+			branchingOpcodeTest8(0x22, "Z", false, 3)
+		})
+
+		It("[Relative] should implement BHI C=1 Z=1 (x)", func() {
+			branchingOpcodeTest8(0x22, "CZ", false, 3)
+		})
+
+		It("[Long Relative] should implement LBHI C=0 Z=0 (o)", func() {
+			branchingOpcodeTest16(0x1022, "", true, 6)
+		})
+
+		It("[Long Relative] should implement LBHI C=1 Z=0 (x)", func() {
+			branchingOpcodeTest16(0x1022, "C", false, 5)
+		})
+
+		It("[Long Relative] should implement LBHI C=0 Z=1 (x)", func() {
+			branchingOpcodeTest16(0x1022, "Z", false, 5)
+		})
+
+		It("[Long Relative] should implement LBHI C=1 Z=1 (x)", func() {
+			branchingOpcodeTest16(0x1022, "CZ", false, 5)
+		})
+
+		It("[Relative] should implement BLS C=0 Z=0 (o)", func() {
+			branchingOpcodeTest8(0x23, "", false, 3)
+		})
+
+		It("[Relative] should implement BLS C=1 Z=0 (x)", func() {
+			branchingOpcodeTest8(0x23, "C", true, 3)
+		})
+
+		It("[Relative] should implement BLS C=0 Z=1 (x)", func() {
+			branchingOpcodeTest8(0x23, "Z", true, 3)
+		})
+
+		It("[Relative] should implement BLS C=1 Z=1 (x)", func() {
+			branchingOpcodeTest8(0x23, "CZ", true, 3)
+		})
+
+		It("[Long Relative] should implement LBLS C=0 Z=0 (o)", func() {
+			branchingOpcodeTest16(0x1023, "", false, 5)
+		})
+
+		It("[Long Relative] should implement LBLS C=1 Z=0 (x)", func() {
+			branchingOpcodeTest16(0x1023, "C", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLS C=0 Z=1 (x)", func() {
+			branchingOpcodeTest16(0x1023, "Z", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLS C=1 Z=1 (x)", func() {
+			branchingOpcodeTest16(0x1023, "CZ", true, 6)
+		})
+
+		It("[Relative] should implement BCC C=0 (o)", func() {
+			branchingOpcodeTest8(0x24, "", true, 3)
+		})
+
+		It("[Relative] should implement BCC C=1 (x)", func() {
+			branchingOpcodeTest8(0x24, "C", false, 3)
+		})
+
+		It("[Relative] should implement LBCC C=0 (o)", func() {
+			branchingOpcodeTest16(0x1024, "", true, 6)
+		})
+
+		It("[Relative] should implement LBCC C=1 (x)", func() {
+			branchingOpcodeTest16(0x1024, "C", false, 5)
+		})
+
+		It("[Relative] should implement BLO C=0 (x)", func() {
+			branchingOpcodeTest8(0x25, "", false, 3)
+		})
+
+		It("[Relative] should implement BLO C=1 (o)", func() {
+			branchingOpcodeTest8(0x25, "C", true, 3)
+		})
+
+		It("[Long Relative] should implement LBLO C=0 (x)", func() {
+			branchingOpcodeTest16(0x1025, "", false, 5)
+		})
+
+		It("[Long Relative] should implement LBLO C=1 (o)", func() {
+			branchingOpcodeTest16(0x1025, "C", true, 6)
+		})
 	})
 })
 
