@@ -319,6 +319,16 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x1023] = opcode{"LBLS", func() { c.lbls(c.lrelative()) }, 5, lrelative}
 	opcodes[0x1024] = opcode{"LBCC", func() { c.lbcc(c.lrelative()) }, 5, lrelative}
 	opcodes[0x1025] = opcode{"LBCS", func() { c.lblo(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1026] = opcode{"LBNE", func() { c.lbne(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1027] = opcode{"LBEQ", func() { c.lbeq(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1028] = opcode{"LBVC", func() { c.lbvc(c.lrelative()) }, 5, lrelative}
+	opcodes[0x1029] = opcode{"LBVS", func() { c.lbvs(c.lrelative()) }, 5, lrelative}
+	opcodes[0x102a] = opcode{"LBPL", func() { c.lbpl(c.lrelative()) }, 5, lrelative}
+	opcodes[0x102b] = opcode{"LBMI", func() { c.lbmi(c.lrelative()) }, 5, lrelative}
+	opcodes[0x102c] = opcode{"LBGE", func() { c.lbge(c.lrelative()) }, 5, lrelative}
+	opcodes[0x102d] = opcode{"LBLT", func() { c.lblt(c.lrelative()) }, 5, lrelative}
+	opcodes[0x102e] = opcode{"LBGT", func() { c.lbgt(c.lrelative()) }, 5, lrelative}
+	opcodes[0x102f] = opcode{"LBLE", func() { c.lble(c.lrelative()) }, 5, lrelative}
 }
 
 func (c *CPU) step() uint64 {
@@ -900,9 +910,25 @@ func (c *CPU) bne(address uint16) {
 	}
 }
 
+/** Branch on Not Equal - Branch when Z = 0 */
+func (c *CPU) lbne(address uint16) {
+	if !c.cc.getZ() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
 /** Branch on Equal - Branch when Z = 1 */
 func (c *CPU) beq(address uint16) {
 	if c.cc.getZ() {
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Equal - Branch when Z = 1 */
+func (c *CPU) lbeq(address uint16) {
+	if c.cc.getZ() {
+		c.clock++
 		c.pc.set(address)
 	}
 }
@@ -914,9 +940,25 @@ func (c *CPU) bvc(address uint16) {
 	}
 }
 
+/** Branch on Overflow Clear - Branch when V = 0 */
+func (c *CPU) lbvc(address uint16) {
+	if !c.cc.getV() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
 /** Branch on Overflow Set - Branch when V = 1 */
 func (c *CPU) bvs(address uint16) {
 	if c.cc.getV() {
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Overflow Set - Branch when V = 1 */
+func (c *CPU) lbvs(address uint16) {
+	if c.cc.getV() {
+		c.clock++
 		c.pc.set(address)
 	}
 }
@@ -928,6 +970,14 @@ func (c *CPU) bpl(address uint16) {
 	}
 }
 
+/** Branch on Plus - Branch when N = 0 */
+func (c *CPU) lbpl(address uint16) {
+	if !c.cc.getN() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
 /** Branch on Minus - Branch when N = 1 */
 func (c *CPU) bmi(address uint16) {
 	if c.cc.getN() {
@@ -935,30 +985,70 @@ func (c *CPU) bmi(address uint16) {
 	}
 }
 
-/** Branch on Greater than or Equal to Zero - Branch when N ^ V = 0 */
+/** Branch on Minus - Branch when N = 1 */
+func (c *CPU) lbmi(address uint16) {
+	if c.cc.getN() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Greater than or Equal to Zero - Branch when N ⊕ V = 0 */
 func (c *CPU) bge(address uint16) {
 	if c.cc.getN() == c.cc.getV() {
 		c.pc.set(address)
 	}
 }
 
-/** Branch on Less than Zero - Branch when N ^ V = 1 */
+/** Branch on Greater than or Equal to Zero - Branch when N ⊕ V = 0 */
+func (c *CPU) lbge(address uint16) {
+	if c.cc.getN() == c.cc.getV() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Less than Zero - Branch when N ⊕ V = 1 */
 func (c *CPU) blt(address uint16) {
 	if c.cc.getN() != c.cc.getV() {
 		c.pc.set(address)
 	}
 }
 
-/** Branch on Greater - Branch when Z = 0 && (N ^ V) = 0 */
+/** Branch on Less than Zero - Branch when N ⊕ V = 1 */
+func (c *CPU) lblt(address uint16) {
+	if c.cc.getN() != c.cc.getV() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Greater - Branch when Z = 0 && (N ⊕ V) = 0 */
 func (c *CPU) bgt(address uint16) {
 	if !c.cc.getZ() && c.cc.getN() == c.cc.getV() {
 		c.pc.set(address)
 	}
 }
 
-/** Branch on Less than or Equal to Zero - Branch when Z = 1 || (N ^ V) = 1 */
+/** Branch on Greater - Branch when Z = 0 && (N ⊕ V) = 0 */
+func (c *CPU) lbgt(address uint16) {
+	if !c.cc.getZ() && c.cc.getN() == c.cc.getV() {
+		c.clock++
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Less than or Equal to Zero - Branch when Z = 1 || (N ⊕ V) = 1 */
 func (c *CPU) ble(address uint16) {
 	if c.cc.getZ() || c.cc.getN() != c.cc.getV() {
+		c.pc.set(address)
+	}
+}
+
+/** Branch on Less than or Equal to Zero - Branch when Z = 1 || (N ⊕ V) = 1 */
+func (c *CPU) lble(address uint16) {
+	if c.cc.getZ() || c.cc.getN() != c.cc.getV() {
+		c.clock++
 		c.pc.set(address)
 	}
 }

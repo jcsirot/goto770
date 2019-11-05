@@ -2061,6 +2061,294 @@ var _ = Describe("CPU", func() {
 		It("[Long Relative] should implement LBLO C=1 (o)", func() {
 			branchingOpcodeTest16(0x1025, "C", true, 6)
 		})
+
+		It("[Relative] should implement BNE Z=0 (o)", func() {
+			branchingOpcodeTest8(0x26, "", true, 3)
+		})
+
+		It("[Relative] should implement BNE Z=1 (x)", func() {
+			branchingOpcodeTest8(0x26, "Z", false, 3)
+		})
+
+		It("[Long Relative] should implement LBNE Z=0 (o)", func() {
+			branchingOpcodeTest16(0x1026, "", true, 6)
+		})
+
+		It("[Long Relative] should implement LBNE Z=1 (x)", func() {
+			branchingOpcodeTest16(0x1026, "Z", false, 5)
+		})
+
+		It("[Relative] should implement BEQ Z=0 (x)", func() {
+			branchingOpcodeTest8(0x27, "", false, 3)
+		})
+
+		It("[Relative] should implement BEQ Z=1 (o)", func() {
+			branchingOpcodeTest8(0x27, "Z", true, 3)
+		})
+
+		It("[Long Relative] should implement LBEQ Z=0 (x)", func() {
+			branchingOpcodeTest16(0x1027, "", false, 5)
+		})
+
+		It("[Long Relative] should implement LBEQ Z=1 (o)", func() {
+			branchingOpcodeTest16(0x1027, "Z", true, 6)
+		})
+
+		It("[Relative] should implement BVC V=0 (o)", func() {
+			branchingOpcodeTest8(0x28, "", true, 3)
+		})
+
+		It("[Relative] should implement BVC V=1 (x)", func() {
+			branchingOpcodeTest8(0x28, "V", false, 3)
+		})
+
+		It("[Long Relative] should implement LBVC V=0 (o)", func() {
+			branchingOpcodeTest16(0x1028, "", true, 6)
+		})
+
+		It("[Long Relative] should implement LBVC V=1 (x)", func() {
+			branchingOpcodeTest16(0x1028, "V", false, 5)
+		})
+
+		It("[Relative] should implement BVS V=0 (x)", func() {
+			branchingOpcodeTest8(0x29, "", false, 3)
+		})
+
+		It("[Relative] should implement BVS V=1 (o)", func() {
+			branchingOpcodeTest8(0x29, "V", true, 3)
+		})
+
+		It("[Long Relative] should implement LBVS V=0 (x)", func() {
+			branchingOpcodeTest16(0x1029, "", false, 5)
+		})
+
+		It("[Long Relative] should implement LBVS V=1 (o)", func() {
+			branchingOpcodeTest16(0x1029, "V", true, 6)
+		})
+
+		It("[Relative] should implement BPL N=0 (o)", func() {
+			branchingOpcodeTest8(0x2a, "", true, 3)
+		})
+
+		It("[Relative] should implement BPL N=1 (x)", func() {
+			branchingOpcodeTest8(0x2a, "N", false, 3)
+		})
+
+		It("[Long Relative] should implement LBPL N=0 (o)", func() {
+			branchingOpcodeTest16(0x102a, "", true, 6)
+		})
+
+		It("[Long Relative] should implement LBPL N=1 (x)", func() {
+			branchingOpcodeTest16(0x102a, "N", false, 5)
+		})
+
+		It("[Relative] should implement BMI N=0 (x)", func() {
+			branchingOpcodeTest8(0x2b, "", false, 3)
+		})
+
+		It("[Relative] should implement BMI N=1 (o)", func() {
+			branchingOpcodeTest8(0x2b, "N", true, 3)
+		})
+
+		It("[Long Relative] should implement LBMI N=0 (x)", func() {
+			branchingOpcodeTest16(0x102b, "", false, 5)
+		})
+
+		It("[Long Relative] should implement LBMI N=1 (o)", func() {
+			branchingOpcodeTest16(0x102b, "N", true, 6)
+		})
+
+		It("[Relative] should implement BGE N=0 V=0 (o)", func() {
+			branchingOpcodeTest8(0x2c, "", true, 3)
+		})
+
+		It("[Relative] should implement BGE N=0 V=1 (x)", func() {
+			branchingOpcodeTest8(0x2c, "V", false, 3)
+		})
+
+		It("[Relative] should implement BGE N=1 V=0 (x)", func() {
+			branchingOpcodeTest8(0x2c, "N", false, 3)
+		})
+
+		It("[Relative] should implement BGE N=1 V=1 (o)", func() {
+			branchingOpcodeTest8(0x2c, "NV", true, 3)
+		})
+
+		It("[Long Relative] should implement LBGE N=0 V=0 (o)", func() {
+			branchingOpcodeTest16(0x102c, "", true, 6)
+		})
+
+		It("[Long Relative] should implement LBGE N=0 V=1 (x)", func() {
+			branchingOpcodeTest16(0x102c, "V", false, 5)
+		})
+
+		It("[Long Relative] should implement LBGE N=1 V=0 (x)", func() {
+			branchingOpcodeTest16(0x102c, "N", false, 5)
+		})
+
+		It("[Long Relative] should implement LBGE N=1 V=1 (o)", func() {
+			branchingOpcodeTest16(0x102c, "NV", true, 6)
+		})
+
+		It("[Relative] should implement BLT N=0 V=0 (x)", func() {
+			branchingOpcodeTest8(0x2d, "", false, 3)
+		})
+
+		It("[Relative] should implement BLT N=0 V=1 (o)", func() {
+			branchingOpcodeTest8(0x2d, "V", true, 3)
+		})
+
+		It("[Relative] should implement BLT N=1 V=0 (o)", func() {
+			branchingOpcodeTest8(0x2d, "N", true, 3)
+		})
+
+		It("[Relative] should implement BLT N=1 V=1 (x)", func() {
+			branchingOpcodeTest8(0x2d, "NV", false, 3)
+		})
+
+		It("[Long Relative] should implement LBLT N=0 V=0 (x)", func() {
+			branchingOpcodeTest16(0x102d, "", false, 5)
+		})
+
+		It("[Long Relative] should implement LBLT N=0 V=1 (o)", func() {
+			branchingOpcodeTest16(0x102d, "V", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLT N=1 V=0 (o)", func() {
+			branchingOpcodeTest16(0x102d, "N", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLT N=1 V=1 (x)", func() {
+			branchingOpcodeTest16(0x102d, "NV", false, 5)
+		})
+
+		It("[Relative] should implement BGT Z=0 N=0 V=0 (o)", func() {
+			branchingOpcodeTest8(0x2e, "", true, 3)
+		})
+
+		It("[Relative] should implement BGT Z=0 N=0 V=1 (x)", func() {
+			branchingOpcodeTest8(0x2e, "V", false, 3)
+		})
+
+		It("[Relative] should implement BGT Z=0 N=1 V=0 (x)", func() {
+			branchingOpcodeTest8(0x2e, "N", false, 3)
+		})
+
+		It("[Relative] should implement BGT Z=0 N=1 V=1 (o)", func() {
+			branchingOpcodeTest8(0x2e, "NV", true, 3)
+		})
+
+		It("[Relative] should implement BGT Z=1 N=0 V=0 (x)", func() {
+			branchingOpcodeTest8(0x2e, "Z", false, 3)
+		})
+
+		It("[Relative] should implement BGT Z=1 N=0 V=1 (x)", func() {
+			branchingOpcodeTest8(0x2e, "ZV", false, 3)
+		})
+
+		It("[Relative] should implement BGT Z=1 N=1 V=0 (x)", func() {
+			branchingOpcodeTest8(0x2e, "ZN", false, 3)
+		})
+
+		It("[Relative] should implement BGT Z=1 N=1 V=1 (x)", func() {
+			branchingOpcodeTest8(0x2e, "ZNV", false, 3)
+		})
+
+		It("[Long Relative] should implement LBGT Z=0 N=0 V=0 (o)", func() {
+			branchingOpcodeTest16(0x102e, "", true, 6)
+		})
+
+		It("[Long Relative] should implement LBGT Z=0 N=0 V=1 (x)", func() {
+			branchingOpcodeTest16(0x102e, "V", false, 5)
+		})
+
+		It("[Long Relative] should implement LBGT Z=0 N=1 V=0 (x)", func() {
+			branchingOpcodeTest16(0x102e, "N", false, 5)
+		})
+
+		It("[Long Relative] should implement LBGT Z=0 N=1 V=1 (o)", func() {
+			branchingOpcodeTest16(0x102e, "NV", true, 6)
+		})
+
+		It("[Long Relative] should implement LBGT Z=1 N=0 V=0 (x)", func() {
+			branchingOpcodeTest16(0x102e, "Z", false, 5)
+		})
+
+		It("[Long Relative] should implement LBGT Z=1 N=0 V=1 (x)", func() {
+			branchingOpcodeTest16(0x102e, "ZV", false, 5)
+		})
+
+		It("[Long Relative] should implement LBGT Z=1 N=1 V=0 (x)", func() {
+			branchingOpcodeTest16(0x102e, "ZN", false, 5)
+		})
+
+		It("[Long Relative] should implement LBGT Z=1 N=1 V=1 (x)", func() {
+			branchingOpcodeTest16(0x102e, "ZNV", false, 5)
+		})
+
+		It("[Relative] should implement BLE Z=0 N=0 V=0 (x)", func() {
+			branchingOpcodeTest8(0x2f, "", false, 3)
+		})
+
+		It("[Relative] should implement BLE Z=0 N=0 V=1 (o)", func() {
+			branchingOpcodeTest8(0x2f, "V", true, 3)
+		})
+
+		It("[Relative] should implement BLE Z=0 N=1 V=0 (o)", func() {
+			branchingOpcodeTest8(0x2f, "N", true, 3)
+		})
+
+		It("[Relative] should implement BLE Z=0 N=1 V=1 (x)", func() {
+			branchingOpcodeTest8(0x2f, "NV", false, 3)
+		})
+
+		It("[Relative] should implement BLE Z=1 N=0 V=0 (o)", func() {
+			branchingOpcodeTest8(0x2f, "Z", true, 3)
+		})
+
+		It("[Relative] should implement BLE Z=1 N=0 V=1 (o)", func() {
+			branchingOpcodeTest8(0x2f, "ZV", true, 3)
+		})
+
+		It("[Relative] should implement BLE Z=1 N=1 V=0 (o)", func() {
+			branchingOpcodeTest8(0x2f, "ZN", true, 3)
+		})
+
+		It("[Relative] should implement BLE Z=1 N=1 V=1 (o)", func() {
+			branchingOpcodeTest8(0x2f, "ZNV", true, 3)
+		})
+
+		It("[Long Relative] should implement LBLE Z=0 N=0 V=0 (x)", func() {
+			branchingOpcodeTest16(0x102f, "", false, 5)
+		})
+
+		It("[Long Relative] should implement LBLE Z=0 N=0 V=1 (o)", func() {
+			branchingOpcodeTest16(0x102f, "V", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLE Z=0 N=1 V=0 (o)", func() {
+			branchingOpcodeTest16(0x102f, "N", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLE Z=0 N=1 V=1 (x)", func() {
+			branchingOpcodeTest16(0x102f, "NV", false, 5)
+		})
+
+		It("[Long Relative] should implement LBLE Z=1 N=0 V=0 (o)", func() {
+			branchingOpcodeTest16(0x102f, "Z", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLE Z=1 N=0 V=1 (o)", func() {
+			branchingOpcodeTest16(0x102f, "ZV", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLE Z=1 N=1 V=0 (o)", func() {
+			branchingOpcodeTest16(0x102f, "ZN", true, 6)
+		})
+
+		It("[Long Relative] should implement LBLE Z=1 N=1 V=1 (o)", func() {
+			branchingOpcodeTest16(0x102f, "ZNV", true, 6)
+		})
 	})
 })
 
@@ -2442,216 +2730,6 @@ func TestTFRInvalidRegisterCode(t *testing.T) {
 		assert.That(r).AsString().Contains("Invalid register code")
 	}()
 	cpu.step()
-}
-
-func branchingOpcodeTest(t *testing.T, opcode uint8, flags []uint8, branch bool) {
-	assert := assert.New(t)
-	var cpu = newCPU()
-	cpu.pc = 0x1000
-	cpu.write(0x1000, opcode)
-	cpu.write(0x1001, 0x10)
-	for _, flag := range flags {
-		cpu.cc |= flag
-	}
-	cpu.step()
-	offset := 0
-	if branch {
-		offset = 0x10
-	}
-	assert.ThatInt(int(cpu.pc)).IsEqualTo(0x1002 + offset)
-	assert.ThatInt(int(cpu.clock)).IsEqualTo(3)
-}
-
-func TestBHIC0Z0(t *testing.T) {
-	branchingOpcodeTest(t, 0x22, []uint8{}, true)
-}
-
-func TestBHIC1Z0(t *testing.T) {
-	branchingOpcodeTest(t, 0x22, []uint8{carry}, false)
-}
-
-func TestBHIC0Z1(t *testing.T) {
-	branchingOpcodeTest(t, 0x22, []uint8{zero}, false)
-}
-
-func TestBHIC1Z1(t *testing.T) {
-	branchingOpcodeTest(t, 0x22, []uint8{carry, zero}, false)
-}
-
-func TestBLSC0Z0(t *testing.T) {
-	branchingOpcodeTest(t, 0x23, []uint8{}, false)
-}
-
-func TestBLSC1Z0(t *testing.T) {
-	branchingOpcodeTest(t, 0x23, []uint8{carry}, true)
-}
-
-func TestBLSC0Z1(t *testing.T) {
-	branchingOpcodeTest(t, 0x23, []uint8{zero}, true)
-}
-
-func TestBLSC1Z1(t *testing.T) {
-	branchingOpcodeTest(t, 0x23, []uint8{carry, zero}, true)
-}
-
-func TestBCCC0(t *testing.T) {
-	branchingOpcodeTest(t, 0x24, []uint8{}, true)
-}
-
-func TestBCCC1(t *testing.T) {
-	branchingOpcodeTest(t, 0x24, []uint8{carry}, false)
-}
-
-func TestBLOC0(t *testing.T) {
-	branchingOpcodeTest(t, 0x25, []uint8{}, false)
-}
-
-func TestBLOC1(t *testing.T) {
-	branchingOpcodeTest(t, 0x25, []uint8{carry}, true)
-}
-
-func TestBNEZ0(t *testing.T) {
-	branchingOpcodeTest(t, 0x26, []uint8{}, true)
-}
-
-func TestBNEZ1(t *testing.T) {
-	branchingOpcodeTest(t, 0x26, []uint8{zero}, false)
-}
-
-func TestBEQZ0(t *testing.T) {
-	branchingOpcodeTest(t, 0x27, []uint8{}, false)
-}
-
-func TestBEQZ1(t *testing.T) {
-	branchingOpcodeTest(t, 0x27, []uint8{zero}, true)
-}
-
-func TestBVCV0(t *testing.T) {
-	branchingOpcodeTest(t, 0x28, []uint8{}, true)
-}
-
-func TestBVCV1(t *testing.T) {
-	branchingOpcodeTest(t, 0x28, []uint8{overflow}, false)
-}
-
-func TestBVSV0(t *testing.T) {
-	branchingOpcodeTest(t, 0x29, []uint8{}, false)
-}
-
-func TestBVSV1(t *testing.T) {
-	branchingOpcodeTest(t, 0x29, []uint8{overflow}, true)
-}
-
-func TestBPLN0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2a, []uint8{}, true)
-}
-
-func TestBPLN1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2a, []uint8{negative}, false)
-}
-
-func TestBMIN0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2b, []uint8{}, false)
-}
-
-func TestBMIN1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2b, []uint8{negative}, true)
-}
-
-func TestBGEN0V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2c, []uint8{}, true)
-}
-
-func TestBGEN1V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2c, []uint8{negative}, false)
-}
-
-func TestBGEN0V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2c, []uint8{overflow}, false)
-}
-
-func TestBGEN1V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2c, []uint8{negative, overflow}, true)
-}
-
-func TestBLTN0V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2d, []uint8{}, false)
-}
-
-func TestBLTN1V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2d, []uint8{negative}, true)
-}
-
-func TestBLTN0V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2d, []uint8{overflow}, true)
-}
-
-func TestBLTN1V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2d, []uint8{negative, overflow}, false)
-}
-
-func TestBGTZ0N0V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{}, true)
-}
-
-func TestBGTZ0N0V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{overflow}, false)
-}
-
-func TestBGTZ0N1V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{negative}, false)
-}
-
-func TestBGTZ0N1V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{overflow, negative}, true)
-}
-
-func TestBGTZ1N0V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{zero}, false)
-}
-
-func TestBGTZ1N0V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{zero, overflow}, false)
-}
-
-func TestBGTZ1N1V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{zero, negative}, false)
-}
-
-func TestBGTZ1N1V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2e, []uint8{zero, overflow, negative}, false)
-}
-
-func TestBLEZ0N0V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{}, false)
-}
-
-func TestBLEZ0N0V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{overflow}, true)
-}
-
-func TestBLEZ0N1V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{negative}, true)
-}
-
-func TestBLEZ0N1V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{overflow, negative}, false)
-}
-
-func TestBLEZ1N0V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{zero}, true)
-}
-
-func TestBLEZ1N0V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{zero, overflow}, true)
-}
-
-func TestBLEZ1N1V0(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{zero, negative}, true)
-}
-
-func TestBLEZ1N1V1(t *testing.T) {
-	branchingOpcodeTest(t, 0x2f, []uint8{zero, overflow, negative}, true)
 }
 
 func TestLEAX(t *testing.T) {
