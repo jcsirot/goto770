@@ -78,15 +78,15 @@ func (c *CPU) Initialize(ram Memory) {
 }
 
 func (c *CPU) Reset() {
-	c.a = r8{r: new(int)}
-	c.b = r8{r: new(int)}
-	c.x = r16{r: new(int)}
-	c.y = r16{r: new(int)}
-	c.u = r16{r: new(int)}
-	c.s = r16{r: new(int)}
-	c.dp = r8{r: new(int)}
-	c.cc = ccr{r8{r: new(int)}}
-	c.pc = r16{r: new(int)}
+	c.a = r8{n: "A", r: new(int)}
+	c.b = r8{n: "B", r: new(int)}
+	c.x = r16{n: "X", r: new(int)}
+	c.y = r16{n: "Y", r: new(int)}
+	c.u = r16{n: "U", r: new(int)}
+	c.s = r16{n: "S", r: new(int)}
+	c.dp = r8{n: "DP", r: new(int)}
+	c.cc = ccr{r8{n: "CC", r: new(int)}}
+	c.pc = r16{n: "PC", r: new(int)}
 	c.clock = 0
 }
 
@@ -143,7 +143,7 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x3a] = opcode{"ABX", func() { c.abx() }, 3, inherent}
 	opcodes[0x3b] = opcode{"RTI", func() { c.rti() }, 3, inherent}
 	opcodes[0x3d] = opcode{"MUL", func() { c.mul() }, 11, inherent}
-	opcodes[0x3f] = opcode{"SWI", func() { c.swi() }, 7, inherent}
+	opcodes[0x3f] = opcode{"SWI", func() { c.swi() }, 7, inherent} // SWI is 19 cycles but part of clock increment is done in PushRegister function
 	opcodes[0x40] = opcode{"NEGA", func() { c.nega() }, 2, inherent}
 	opcodes[0x43] = opcode{"COMA", func() { c.coma() }, 2, inherent}
 	opcodes[0x44] = opcode{"LSRA", func() { c.lsra() }, 2, inherent}
@@ -329,6 +329,9 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x102d] = opcode{"LBLT", func() { c.lblt(c.lrelative()) }, 5, lrelative}
 	opcodes[0x102e] = opcode{"LBGT", func() { c.lbgt(c.lrelative()) }, 5, lrelative}
 	opcodes[0x102f] = opcode{"LBLE", func() { c.lble(c.lrelative()) }, 5, lrelative}
+	opcodes[0x103f] = opcode{"SWI2", func() { c.swi2() }, 8, inherent}
+	opcodes[0x1083] = opcode{"CMPD", func() { c.cmpd(c.limmediate()) }, 5, limmediate}
+	opcodes[0x108c] = opcode{"CMPY", func() { c.cmpy(c.limmediate()) }, 5, limmediate}
 }
 
 func (c *CPU) step() uint64 {
@@ -1091,10 +1094,12 @@ func (c *CPU) pushRegister(value register, stack r16) {
 	sz := value.size()
 	if sz == 8 {
 		stack.dec()
+		// fmt.Printf("Push %s(%02x) to %04x\n", value.name(), value.get(), stack.uint16())
 		c.writeInt(stack.uint16(), value.get())
 		c.clock++
 	} else if sz == 16 {
 		stack.dec().dec()
+		// fmt.Printf("Push %s(%02x) to %04x\n", value.name(), value.get(), stack.uint16())
 		c.writewInt(stack.uint16(), value.get())
 		c.clock += 2
 	} else {
@@ -1287,6 +1292,20 @@ func (c *CPU) swi() {
 	c.pc.set(c.readw(0xfffa))
 }
 
+/** Software Interrupt */
+func (c *CPU) swi2() {
+	c.cc.setE()
+	c.pushRegister(c.pc, c.s)
+	c.pushRegister(c.u, c.s)
+	c.pushRegister(c.y, c.s)
+	c.pushRegister(c.x, c.s)
+	c.pushRegister(c.dp, c.s)
+	c.pushRegister(c.b, c.s)
+	c.pushRegister(c.a, c.s)
+	c.pushRegister(c.cc, c.s)
+	c.pc.set(c.readw(0xfff4))
+}
+
 /** Subtract Memory - H?NxZxVxCx */
 func (c *CPU) sub_(reg int, value int) int {
 	tmp := reg - value
@@ -1344,10 +1363,22 @@ func (c *CPU) cmpb(address uint16) {
 	c.sub_(c.b.get(), value)
 }
 
+/** Compare Memory from Register D - H?NxZxVxCx */
+func (c *CPU) cmpd(address uint16) {
+	value := c.readInt(address)
+	c.sub16_(int(c.d()), value)
+}
+
 /** Compare Memory from Register X - NxZxVxCx */
 func (c *CPU) cmpx(address uint16) {
 	value := c.readwInt(address)
 	c.sub16_(c.x.get(), value)
+}
+
+/** Compare Memory from Register Y - NxZxVxCx */
+func (c *CPU) cmpy(address uint16) {
+	value := c.readwInt(address)
+	c.sub16_(c.y.get(), value)
 }
 
 /** Compare Memory from Register A - H?NxZxVxCx */

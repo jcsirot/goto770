@@ -31,6 +31,54 @@ var _ = Describe("CPU", func() {
 		ExpectD(cpu, 0xe5f0)
 	})
 
+	Context("[SWI]", func() {
+
+		It("should implement SWI", func() {
+			cpu.pc.set(0x1000)
+			cpu.s.set(0x2000)
+			cpu.a.set(0x2f)
+			cpu.dp.set(0x18)
+			cpu.x.set(0xe0ff)
+			cpu.writew(0xfffa, 0xc200)
+			cpu.write(0x1000, 0x3f) // SWI
+			cpu.step()
+			ExpectWord(cpu, 0x2000-2, 0x1001)
+			ExpectWord(cpu, 0x2000-4, cpu.u.get())
+			ExpectWord(cpu, 0x2000-6, cpu.y.get())
+			ExpectWord(cpu, 0x2000-8, cpu.x.get())
+			ExpectMemory(cpu, 0x2000-9, cpu.dp.get())
+			ExpectMemory(cpu, 0x2000-10, cpu.b.get())
+			ExpectMemory(cpu, 0x2000-11, cpu.a.get())
+			ExpectMemory(cpu, 0x2000-12, 0x80)
+			ExpectPC(cpu, 0xc200)
+			ExpectClock(cpu, 19)
+			ExpectCCR(cpu, "EFI", "ZVNHC")
+		})
+
+		It("should implement SWI2", func() {
+			cpu.pc.set(0x1000)
+			cpu.s.set(0x2000)
+			cpu.a.set(0x2f)
+			cpu.dp.set(0x18)
+			cpu.x.set(0xe0ff)
+			cpu.writew(0xfff4, 0xc200)
+			cpu.writew(0x1000, 0x103f) // SWI2
+			cpu.cc.setC()
+			cpu.step()
+			ExpectWord(cpu, 0x2000-2, 0x1002)
+			ExpectWord(cpu, 0x2000-4, cpu.u.get())
+			ExpectWord(cpu, 0x2000-6, cpu.y.get())
+			ExpectWord(cpu, 0x2000-8, cpu.x.get())
+			ExpectMemory(cpu, 0x2000-9, cpu.dp.get())
+			ExpectMemory(cpu, 0x2000-10, cpu.b.get())
+			ExpectMemory(cpu, 0x2000-11, cpu.a.get())
+			ExpectMemory(cpu, 0x2000-12, 0x81)
+			ExpectPC(cpu, 0xc200)
+			ExpectClock(cpu, 20)
+			ExpectCCR(cpu, "EC", "ZVNHFI")
+		})
+	})
+
 	Context("[NEG]", func() {
 
 		It("[Direct] should implement NEG with Direct addressing mode", func() {
@@ -534,6 +582,45 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 2)
 			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement CMPX", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x8c) // CMPX
+			cpu.writew(0x1001, 0x0104)
+			cpu.x.set(0x07f9)
+			cpu.step()
+
+			ExpectX(cpu, 0x07f9)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "", "NZVC")
+		})
+
+		It("[Immediate] should implement CMPX with bit Z", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x8c) // CMPX
+			cpu.writew(0x1001, 0x0104)
+			cpu.x.set(0x0104)
+			cpu.step()
+
+			ExpectX(cpu, 0x0104)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "Z", "NVC")
+		})
+
+		It("[Immediate] should implement CMPX with bit NC", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x8c) // CMPX
+			cpu.writew(0x1001, 0x0104)
+			cpu.x.set(0x0102)
+			cpu.step()
+
+			ExpectX(cpu, 0x0102)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "NC", "ZV")
 		})
 	})
 
@@ -3078,12 +3165,12 @@ func TestSWI(t *testing.T) {
 
 // ExpectMemory asserts a value at a memory address
 func ExpectMemory(cpu CPU, address uint16, expected interface{}) {
-	ExpectWithOffset(1, cpu.read(address)).To(BeEquivalentTo(expected))
+	ExpectWithOffset(1, cpu.read(address)).To(BeEquivalentTo(expected), "Expected value at address 0x%04x to be 0x%02x but is 0x%02x", address, expected, cpu.read(address))
 }
 
 // ExpectWord asserts a value at a memory address
 func ExpectWord(cpu CPU, address uint16, expected interface{}) {
-	ExpectWithOffset(1, cpu.readw(address)).To(BeEquivalentTo(expected))
+	ExpectWithOffset(1, cpu.readw(address)).To(BeEquivalentTo(expected), "Expected value at address 0x%04x to be 0x%04x but is 0x%04x", address, expected, cpu.readw(address))
 }
 
 // ExpectA asserts a value in A registry
@@ -3099,6 +3186,11 @@ func ExpectB(cpu CPU, expected interface{}) {
 // ExpectD asserts a value in D registry
 func ExpectD(cpu CPU, expected interface{}) {
 	ExpectWithOffset(1, cpu.d()).To(BeEquivalentTo(expected), "Expected D register to be 0x%x but is 0x%x", expected, cpu.d())
+}
+
+// ExpectX asserts a value in U registry
+func ExpectX(cpu CPU, expected interface{}) {
+	ExpectWithOffset(1, cpu.x.get()).To(BeEquivalentTo(expected), "Expected X register to be 0x%x but is 0x%x", expected, cpu.u.get())
 }
 
 // ExpectS asserts a value in S registry

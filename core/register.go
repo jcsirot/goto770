@@ -3,14 +3,17 @@ package core
 import log "github.com/sirupsen/logrus"
 
 type r8 struct {
+	n string
 	r *int
 }
 
 type r16 struct {
+	n string
 	r *int
 }
 
 type register interface {
+	name() string
 	size() int
 	set(value interface{})
 	get() int
@@ -21,6 +24,10 @@ type register interface {
 }
 
 // 8-bits register
+
+func (r r8) name() string {
+	return r.n
+}
 
 func (r r8) size() int {
 	return 8
@@ -68,6 +75,10 @@ func (r r8) int16() int16 {
 }
 
 // 16-bits register
+
+func (r r16) name() string {
+	return r.n
+}
 
 func (r r16) size() int {
 	return 16
