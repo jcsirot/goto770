@@ -106,6 +106,41 @@ var _ = Describe("CPU", func() {
 		})
 	})
 
+	Context("[CLR]", func() {
+
+		It("[Inherent] should implement CLRA", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x4f) // CLRA
+			cpu.a.set(0x2f)
+			cpu.cc.clearZ()
+			cpu.cc.setV()
+			cpu.cc.setC()
+			cpu.cc.setN()
+			cpu.step()
+
+			ExpectA(cpu, 0x00)
+			ExpectPC(cpu, 0x1001)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "Z", "NCV")
+		})
+
+		It("[Inherent] should implement CLRB", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x5f) // CLRA
+			cpu.b.set(0x2f)
+			cpu.cc.clearZ()
+			cpu.cc.setV()
+			cpu.cc.setC()
+			cpu.cc.setN()
+			cpu.step()
+
+			ExpectB(cpu, 0x00)
+			ExpectPC(cpu, 0x1001)
+			ExpectClock(cpu, 2)
+			ExpectCCR(cpu, "Z", "NCV")
+		})
+	})
+
 	Context("[NEG]", func() {
 
 		It("[Direct] should implement NEG with Direct addressing mode", func() {
