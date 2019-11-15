@@ -42,6 +42,7 @@ var _ = Describe("CPU", func() {
 			cpu.writew(0xfffa, 0xc200)
 			cpu.write(0x1000, 0x3f) // SWI
 			cpu.step()
+
 			ExpectWord(cpu, 0x2000-2, 0x1001)
 			ExpectWord(cpu, 0x2000-4, cpu.u.get())
 			ExpectWord(cpu, 0x2000-6, cpu.y.get())
@@ -65,6 +66,7 @@ var _ = Describe("CPU", func() {
 			cpu.writew(0x1000, 0x103f) // SWI2
 			cpu.cc.setC()
 			cpu.step()
+
 			ExpectWord(cpu, 0x2000-2, 0x1002)
 			ExpectWord(cpu, 0x2000-4, cpu.u.get())
 			ExpectWord(cpu, 0x2000-6, cpu.y.get())
@@ -76,6 +78,31 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0xc200)
 			ExpectClock(cpu, 20)
 			ExpectCCR(cpu, "EC", "ZVNHFI")
+		})
+
+		It("should implement SWI3", func() {
+			cpu.pc.set(0x1000)
+			cpu.s.set(0x2000)
+			cpu.a.set(0x2f)
+			cpu.dp.set(0x18)
+			cpu.x.set(0xe0ff)
+			cpu.writew(0xfff2, 0xaf10)
+			cpu.writew(0x1000, 0x113f) // SWI3
+			cpu.cc.setZ()
+			cpu.cc.setV()
+			cpu.step()
+
+			ExpectWord(cpu, 0x2000-2, 0x1002)
+			ExpectWord(cpu, 0x2000-4, cpu.u.get())
+			ExpectWord(cpu, 0x2000-6, cpu.y.get())
+			ExpectWord(cpu, 0x2000-8, cpu.x.get())
+			ExpectMemory(cpu, 0x2000-9, cpu.dp.get())
+			ExpectMemory(cpu, 0x2000-10, cpu.b.get())
+			ExpectMemory(cpu, 0x2000-11, cpu.a.get())
+			ExpectMemory(cpu, 0x2000-12, 0x86)
+			ExpectPC(cpu, 0xaf10)
+			ExpectClock(cpu, 20)
+			ExpectCCR(cpu, "EZV", "CNHFI")
 		})
 	})
 
@@ -1307,6 +1334,30 @@ var _ = Describe("CPU", func() {
 			ExpectClock(cpu, 5)
 			ExpectCCR(cpu, "", "NZV")
 		})
+
+		It("[Immediate] should implement LDX", func() {
+			cpu.pc.set(0x1000)
+			cpu.write(0x1000, 0x8e) // LDX
+			cpu.writew(0x1001, 0x2a89)
+			cpu.step()
+
+			ExpectX(cpu, 0x2a89)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 3)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Immediate] should implement LDY", func() {
+			cpu.pc.set(0x1000)
+			cpu.writew(0x1000, 0x108e) // LDY
+			cpu.writew(0x1002, 0x2a89)
+			cpu.step()
+
+			ExpectY(cpu, 0x2a89)
+			ExpectPC(cpu, 0x1004)
+			ExpectClock(cpu, 4)
+			ExpectCCR(cpu, "", "NZV")
+		})
 	})
 
 	Context("[ST]", func() {
@@ -1454,6 +1505,36 @@ var _ = Describe("CPU", func() {
 			ExpectPC(cpu, 0x1002)
 			ExpectClock(cpu, 5)
 			ExpectCCR(cpu, "Z", "NV")
+		})
+
+		It("[Direct] should implement STX", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.write(0x1000, 0x9f) // STX
+			cpu.write(0x1001, 0x60)
+			cpu.x.set(0x6b08)
+			cpu.step()
+
+			ExpectWord(cpu, 0x2060, 0x6b08)
+			ExpectX(cpu, 0x6b08)
+			ExpectPC(cpu, 0x1002)
+			ExpectClock(cpu, 5)
+			ExpectCCR(cpu, "", "NZV")
+		})
+
+		It("[Direct] should implement STY", func() {
+			cpu.pc.set(0x1000)
+			cpu.dp.set(0x20)
+			cpu.writew(0x1000, 0x109f) // STY
+			cpu.write(0x1002, 0x60)
+			cpu.y.set(0x6b08)
+			cpu.step()
+
+			ExpectWord(cpu, 0x2060, 0x6b08)
+			ExpectY(cpu, 0x6b08)
+			ExpectPC(cpu, 0x1003)
+			ExpectClock(cpu, 6)
+			ExpectCCR(cpu, "", "NZV")
 		})
 	})
 
@@ -3185,22 +3266,27 @@ func ExpectB(cpu CPU, expected interface{}) {
 
 // ExpectD asserts a value in D registry
 func ExpectD(cpu CPU, expected interface{}) {
-	ExpectWithOffset(1, cpu.d()).To(BeEquivalentTo(expected), "Expected D register to be 0x%x but is 0x%x", expected, cpu.d())
+	ExpectWithOffset(1, cpu.d()).To(BeEquivalentTo(expected), "Expected D register to be 0x%04x but is 0x%04x", expected, cpu.d())
 }
 
-// ExpectX asserts a value in U registry
+// ExpectX asserts a value in X registry
 func ExpectX(cpu CPU, expected interface{}) {
-	ExpectWithOffset(1, cpu.x.get()).To(BeEquivalentTo(expected), "Expected X register to be 0x%x but is 0x%x", expected, cpu.u.get())
+	ExpectWithOffset(1, cpu.x.get()).To(BeEquivalentTo(expected), "Expected X register to be 0x%04x but is 0x%04x", expected, cpu.x.get())
+}
+
+// ExpectY asserts a value in Y registry
+func ExpectY(cpu CPU, expected interface{}) {
+	ExpectWithOffset(1, cpu.y.get()).To(BeEquivalentTo(expected), "Expected Y register to be 0x%04x but is 0x%04x", expected, cpu.y.get())
 }
 
 // ExpectS asserts a value in S registry
 func ExpectS(cpu CPU, expected interface{}) {
-	ExpectWithOffset(1, cpu.s.get()).To(BeEquivalentTo(expected), "Expected S register to be 0x%x but is 0x%x", expected, cpu.s.get())
+	ExpectWithOffset(1, cpu.s.get()).To(BeEquivalentTo(expected), "Expected S register to be 0x%04x but is 0x%04x", expected, cpu.s.get())
 }
 
 // ExpectU asserts a value in U registry
 func ExpectU(cpu CPU, expected interface{}) {
-	ExpectWithOffset(1, cpu.u.get()).To(BeEquivalentTo(expected), "Expected U register to be 0x%x but is 0x%x", expected, cpu.u.get())
+	ExpectWithOffset(1, cpu.u.get()).To(BeEquivalentTo(expected), "Expected U register to be 0x%04x but is 0x%04x", expected, cpu.u.get())
 }
 
 // ExpectPC asserts a value in PC registry

@@ -329,16 +329,46 @@ func (c *CPU) initOpcodes() {
 	opcodes[0x102d] = opcode{"LBLT", func() { c.lblt(c.lrelative()) }, 5, lrelative}
 	opcodes[0x102e] = opcode{"LBGT", func() { c.lbgt(c.lrelative()) }, 5, lrelative}
 	opcodes[0x102f] = opcode{"LBLE", func() { c.lble(c.lrelative()) }, 5, lrelative}
-	opcodes[0x103f] = opcode{"SWI2", func() { c.swi2() }, 8, inherent}
+	opcodes[0x103f] = opcode{"SWI2", func() { c.swi2() }, 8, inherent} // SWI2 is 20 cycles but part of clock increment is done in PushRegister function
 	opcodes[0x1083] = opcode{"CMPD", func() { c.cmpd(c.limmediate()) }, 5, limmediate}
 	opcodes[0x108c] = opcode{"CMPY", func() { c.cmpy(c.limmediate()) }, 5, limmediate}
+	opcodes[0x108e] = opcode{"LDY", func() { c.ldy(c.limmediate()) }, 4, limmediate}
+	opcodes[0x1093] = opcode{"CMPD", func() { c.cmpd(c.direct()) }, 7, direct}
+	opcodes[0x109c] = opcode{"CMPY", func() { c.cmpy(c.direct()) }, 7, direct}
+	opcodes[0x109e] = opcode{"LDY", func() { c.ldy(c.direct()) }, 6, direct}
+	opcodes[0x109f] = opcode{"STY", func() { c.sty(c.direct()) }, 6, direct}
+	opcodes[0x10a3] = opcode{"CMPD", func() { c.cmpd(c.indexed()) }, 7, indexed}
+	opcodes[0x10ac] = opcode{"CMPY", func() { c.cmpy(c.indexed()) }, 7, indexed}
+	opcodes[0x10ae] = opcode{"LDY", func() { c.ldy(c.indexed()) }, 6, indexed}
+	opcodes[0x10af] = opcode{"STY", func() { c.sty(c.indexed()) }, 6, indexed}
+	opcodes[0x10b3] = opcode{"CMPD", func() { c.cmpd(c.extended()) }, 8, extended}
+	opcodes[0x10bc] = opcode{"CMPY", func() { c.cmpy(c.extended()) }, 8, extended}
+	opcodes[0x10be] = opcode{"LDY", func() { c.ldy(c.extended()) }, 7, extended}
+	opcodes[0x10bf] = opcode{"STY", func() { c.sty(c.extended()) }, 7, extended}
+	opcodes[0x10ce] = opcode{"LDS", func() { c.lds(c.limmediate()) }, 4, limmediate}
+	opcodes[0x10de] = opcode{"LDS", func() { c.lds(c.direct()) }, 6, direct}
+	opcodes[0x10df] = opcode{"STS", func() { c.sts(c.direct()) }, 6, direct}
+	opcodes[0x10ee] = opcode{"LDS", func() { c.lds(c.indexed()) }, 6, indexed}
+	opcodes[0x10ef] = opcode{"STS", func() { c.sts(c.indexed()) }, 6, indexed}
+	opcodes[0x10fe] = opcode{"LDS", func() { c.lds(c.extended()) }, 7, extended}
+	opcodes[0x10ff] = opcode{"STS", func() { c.sts(c.extended()) }, 7, extended}
+	// Page 2
+	opcodes[0x113f] = opcode{"SWI3", func() { c.swi3() }, 8, inherent} // SWI3 is 20 cycles but part of clock increment is done in PushRegister function
+	opcodes[0x1183] = opcode{"CMPU", func() { c.cmpu(c.limmediate()) }, 5, limmediate}
+	opcodes[0x118c] = opcode{"CMPS", func() { c.cmps(c.limmediate()) }, 5, limmediate}
+	opcodes[0x1193] = opcode{"CMPU", func() { c.cmpu(c.direct()) }, 7, direct}
+	opcodes[0x119c] = opcode{"CMPS", func() { c.cmps(c.direct()) }, 7, direct}
+	opcodes[0x11a3] = opcode{"CMPU", func() { c.cmpu(c.indexed()) }, 7, indexed}
+	opcodes[0x11ac] = opcode{"CMPS", func() { c.cmps(c.direct()) }, 7, indexed}
+	opcodes[0x11a3] = opcode{"CMPU", func() { c.cmpu(c.extended()) }, 8, extended}
+	opcodes[0x11ac] = opcode{"CMPS", func() { c.cmps(c.extended()) }, 8, extended}
 }
 
 func (c *CPU) step() uint64 {
 	b := c.readInt(c.pc.uint16())
-	if b == 0x10 { // page 1
+	if b == 0x10 || b == 0x11 { // page 1 or page 2
 		c.pc.inc()
-		b = 0x1000 + c.readInt(c.pc.uint16())
+		b = (b << 8) + c.readInt(c.pc.uint16())
 	}
 	opcode := opcodes[b]
 
@@ -1292,7 +1322,7 @@ func (c *CPU) swi() {
 	c.pc.set(c.readw(0xfffa))
 }
 
-/** Software Interrupt */
+/** Software Interrupt 2 */
 func (c *CPU) swi2() {
 	c.cc.setE()
 	c.pushRegister(c.pc, c.s)
@@ -1304,6 +1334,20 @@ func (c *CPU) swi2() {
 	c.pushRegister(c.a, c.s)
 	c.pushRegister(c.cc, c.s)
 	c.pc.set(c.readw(0xfff4))
+}
+
+/** Software Interrupt 3 */
+func (c *CPU) swi3() {
+	c.cc.setE()
+	c.pushRegister(c.pc, c.s)
+	c.pushRegister(c.u, c.s)
+	c.pushRegister(c.y, c.s)
+	c.pushRegister(c.x, c.s)
+	c.pushRegister(c.dp, c.s)
+	c.pushRegister(c.b, c.s)
+	c.pushRegister(c.a, c.s)
+	c.pushRegister(c.cc, c.s)
+	c.pc.set(c.readw(0xfff2))
 }
 
 /** Subtract Memory - H?NxZxVxCx */
@@ -1373,6 +1417,18 @@ func (c *CPU) cmpd(address uint16) {
 func (c *CPU) cmpx(address uint16) {
 	value := c.readwInt(address)
 	c.sub16_(c.x.get(), value)
+}
+
+/** Compare Memory from Register U - NxZxVxCx */
+func (c *CPU) cmpu(address uint16) {
+	value := c.readwInt(address)
+	c.sub16_(c.u.get(), value)
+}
+
+/** Compare Memory from Register S - NxZxVxCx */
+func (c *CPU) cmps(address uint16) {
+	value := c.readwInt(address)
+	c.sub16_(c.s.get(), value)
 }
 
 /** Compare Memory from Register Y - NxZxVxCx */
@@ -1458,12 +1514,28 @@ func (c *CPU) ldx(address uint16) {
 	c.x.set(value)
 }
 
+/** Load Register Y from Memory - NxZxV0 */
+func (c *CPU) ldy(address uint16) {
+	value := c.readwInt(address)
+	c.updateNZ16(value)
+	c.cc.clearV()
+	c.y.set(value)
+}
+
 /** Load Register U from Memory - NxZxV0 */
 func (c *CPU) ldu(address uint16) {
 	value := c.readwInt(address)
 	c.updateNZ16(value)
 	c.cc.clearV()
 	c.u.set(value)
+}
+
+/** Load Register S from Memory - NxZxV0 */
+func (c *CPU) lds(address uint16) {
+	value := c.readwInt(address)
+	c.updateNZ16(value)
+	c.cc.clearV()
+	c.s.set(value)
 }
 
 /** Exclusive OR into Register - NxZxV0 */
@@ -1595,9 +1667,25 @@ func (c *CPU) stx(address uint16) {
 	c.cc.clearV()
 }
 
+/** Store Register Y into Memory - NxZxV0 */
+func (c *CPU) sty(address uint16) {
+	tmp := c.y.get()
+	c.writewInt(address, tmp)
+	c.updateNZ16(tmp)
+	c.cc.clearV()
+}
+
 /** Store Register U into Memory - NxZxV0 */
 func (c *CPU) stu(address uint16) {
 	tmp := c.u.get()
+	c.writewInt(address, tmp)
+	c.updateNZ16(tmp)
+	c.cc.clearV()
+}
+
+/** Store Register S into Memory - NxZxV0 */
+func (c *CPU) sts(address uint16) {
+	tmp := c.s.get()
 	c.writewInt(address, tmp)
 	c.updateNZ16(tmp)
 	c.cc.clearV()
