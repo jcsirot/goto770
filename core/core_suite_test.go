@@ -1,4 +1,4 @@
-package main_test
+package core_test
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestGoto770(t *testing.T) {
+func TestCore(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("junit.xml")
 	RunSpecsWithDefaultAndCustomReporters(t, "Goto770 Suite", []Reporter{junitReporter})
